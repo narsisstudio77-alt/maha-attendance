@@ -30,8 +30,9 @@
                     <p class="text-[10px] text-slate-300">سامانه ثبت تردد کارکنان</p>
                 </div>
             </div>
+            <!-- Dynamic Shamsi Header Date -->
             <div class="text-[11px] bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/80 font-mono font-bold" id="current-date-badge">
-                ۱۴۰۵/۰۴/۱۰
+                --/--/--
             </div>
         </div>
     </header>
@@ -42,7 +43,7 @@
         <div id="connection-badge" class="mb-4 text-center">
             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                متصل به دیتابیس ابری ماها
+                متصل به دیتابیس ابری گوگل شیت ماها
             </span>
         </div>
         
@@ -147,7 +148,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-4">
                 <div class="pb-2 border-b border-slate-100">
                     <h3 class="text-sm font-black text-[#0F1E3D] flex items-center gap-1">
-                        🌴 درخواست مرخصی
+                        🌴 درخواست مرخصی استحقاقی روزانه
                     </h3>
                 </div>
 
@@ -211,7 +212,7 @@
             { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
-        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwTFvjGymfWHh5N7Jz-N-viPC6YPppXFrDc92oOtptPxOx9QdcZB8YbK2bdo0w9sZMv/exec"; 
+        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyirFAAzRTjaz4xYbajftAEuPwK59Yu-gE8PXX8iTdyhF-Khb6qtZTvd9n2UjkwElXsgg/exec"; 
 
         let employees = [];
         let logs = [];
@@ -220,6 +221,72 @@
         
         let localStream = null;
         let capturedPhotoBase64 = "";
+
+        window.onload = function() {
+            loadLocalFallback();
+            loadConfigAndInit();
+            startCamera();
+            updateIranClock();
+
+            // Dynamic Live Iran Clock on Tehran Timezone
+            setInterval(updateIranClock, 1000);
+
+            // Fetch from Sheets every 6 seconds, ONLY if we are not actively saving!
+            setInterval(() => {
+                if (!isSaving) {
+                    syncWithGoogleSheets();
+                }
+            }, 6000);
+        };
+
+        // Real-time Shamsi Date and Iran Clock Locker
+        function getIranDateTime() {
+            const dateOptions = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                timeZone: 'Asia/Tehran'
+            };
+            const timeOptions = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Tehran'
+            };
+
+            const persianDateFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', dateOptions);
+            const timeFormatter = new Intl.DateTimeFormat('fa-IR', timeOptions);
+
+            let dateStr = persianDateFormatter.format(new Date());
+            let timeStr = timeFormatter.format(new Date());
+
+            // Convert Persian Numbers to Latin Digits for database uniformity
+            const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+            const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+            for (let i = 0; i < 10; i++) {
+                dateStr = dateStr.replace(persianDigits[i], englishDigits[i]);
+                timeStr = timeStr.replace(persianDigits[i], englishDigits[i]);
+            }
+
+            // Clean delimiters
+            dateStr = dateStr.replace(/\//g, '/').replace(/-/g, '/');
+
+            return { date: dateStr, time: timeStr };
+        }
+
+        function updateIranClock() {
+            const dt = getIranDateTime();
+            
+            // Update live clock
+            const clock = document.getElementById("current-time");
+            if (clock) clock.innerText = dt.time;
+
+            // Update live shamsi date header
+            const dateBadge = document.getElementById("current-date-badge");
+            if (dateBadge) dateBadge.innerText = dt.date;
+        }
 
         function togglePinVisibility() {
             const input = document.getElementById("emp-pin-input");
@@ -234,30 +301,6 @@
                 }
             }
         }
-
-        window.onload = function() {
-            loadLocalFallback();
-            loadConfigAndInit();
-            startCamera();
-
-            setInterval(() => {
-                const now = new Date();
-                const clock = document.getElementById("current-time");
-                if (clock) {
-                    clock.innerText = 
-                        String(now.getHours()).padStart(2, '0') + ":" + 
-                        String(now.getMinutes()).padStart(2, '0') + ":" + 
-                        String(now.getSeconds()).padStart(2, '0');
-                }
-            }, 1000);
-
-            // Fetch from Sheets every 6 seconds, ONLY if we are not actively saving!
-            setInterval(() => {
-                if (!isSaving) {
-                    syncWithGoogleSheets();
-                }
-            }, 6000);
-        };
 
         function startCamera() {
             const video = document.getElementById("webcam");
@@ -363,7 +406,7 @@
                     }
                 })
                 .catch(err => {
-                    updateConnectionBadge(false, "خطا در ارتباط ابری");
+                    updateConnectionBadge(false, "خطا در ارتباط با گوگل شیت");
                 });
         }
 
@@ -383,7 +426,7 @@
                 return;
             }
             
-            // SECURITY BUSTER: Using mode: 'no-cors' to completely bypass Google's 302 Redirect CORS Block!
+            // SECURITY BUSTER
             fetch(GOOGLE_WEB_APP_URL + "?action=save_data", {
                 method: 'POST',
                 mode: 'no-cors', 
@@ -395,7 +438,6 @@
                 setTimeout(() => {
                     isSaving = false;
                     if (onSuccessCallback) onSuccessCallback();
-                    // Force a quick sync back to get the updated lists securely
                     syncWithGoogleSheets();
                 }, 1500);
             })
@@ -413,7 +455,7 @@
                 badge.innerHTML = `
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        ${msg || "متصل به دیتابیس ابری ماها 🟢"}
+                        ${msg || "متصل به دیتابیس ابری گوگل شیت ماها 🟢"}
                     </span>
                 `;
             } else {
@@ -454,8 +496,7 @@
         function verifyEmployeePin(emp) {
             const pinVal = document.getElementById("emp-pin-input").value.trim();
             const correctPin = emp.pin || "1234";
-            // TOSTRING FIX: Google Sheets converts numeric PINs (like 1010) to JavaScript numbers, 
-            // while the input value is a string. This converts both to string for a 100% reliable match!
+            // TOSTRING FIX
             return pinVal.toString().trim() === correctPin.toString().trim();
         }
 
@@ -568,9 +609,7 @@
                 }
             }
 
-            const now = new Date();
-            const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-            const note = document.getElementById("clock-note").value;
+            const dt = getIranDateTime();
 
             // Lock UI Buttons
             document.getElementById("btn-submit-in").disabled = true;
@@ -581,10 +620,10 @@
                 empId: emp.id,
                 empName: emp.name,
                 type: type,
-                time: timeStr,
-                date: "1405/04/10",
+                time: dt.time, // Locked to Tehran Time!
+                date: dt.date, // Locked to dynamic Shamsi date!
                 status: "حاضر",
-                note: note ? note : "",
+                note: document.getElementById("clock-note").value || "",
                 selfie: capturedPhotoBase64
             };
 
@@ -641,5 +680,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a9079ec9edc7d',t:'MTc4MzgwMTgwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19aafe21917d2a6',t:'MTc4MzgwMzA5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

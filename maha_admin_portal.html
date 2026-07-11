@@ -40,7 +40,6 @@
                     🔒 تایید و ورود امن
                 </button>
             </div>
-            
         </div>
     </div>
 
@@ -65,7 +64,7 @@
                         🔒 خروج امن
                     </button>
                     <span id="sync-status-badge" class="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">
-                        همگام‌سازی ابری فعال 🟢
+                        همگام‌سازی ابری گوگل شیت فعال 🟢
                     </span>
                 </div>
             </div>
@@ -304,7 +303,7 @@
         ];
 
         // Decoupled Cloud URL
-        let CLOUD_URL = "https://script.google.com/macros/s/AKfycbwTFvjGymfWHh5N7Jz-N-viPC6YPppXFrDc92oOtptPxOx9QdcZB8YbK2bdo0w9sZMv/exec";
+        let CLOUD_URL = "https://script.google.com/macros/s/AKfycbyirFAAzRTjaz4xYbajftAEuPwK59Yu-gE8PXX8iTdyhF-Khb6qtZTvd9n2UjkwElXsgg/exec";
 
         let employees = [];
         let logs = [];
@@ -463,7 +462,7 @@
             const badge = document.getElementById("sync-status-badge");
             if (!badge) return;
             if (online) {
-                badge.innerText = msg || "همگام‌سازی ابری فعال 🟢";
+                badge.innerText = msg || "همگام‌سازی ابری گوگل شیت فعال 🟢";
                 badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
             } else {
                 badge.innerText = msg || "حالت آفلاین / تستی ⚠️";
@@ -625,7 +624,7 @@
                 document.getElementById("new-tab-id").value = "";
                 document.getElementById("new-tab-pin").value = "1234";
                 loadLocalFallback();
-                alert(`✅ همکار جدید "${name}" به لیست اضافه و در سیستم ابری ذخیره شد.`);
+                alert(`✅ همکار جدید "${name}" به لیست اضافه و در گوگل شیت ذخیره شد.`);
             });
         }
 
@@ -710,7 +709,7 @@
             ratioChart = new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
-                    labels: ['حاضر عادی', 'مرخصی', 'ماموریت/ساعتی'],
+                    labels: ['حاضر عادی', 'مرخصی استحقاقی روزانه', 'ماموریت/ساعتی'],
                     datasets: [{
                         data: [0, 0, 0],
                         backgroundColor: ['#10b981', '#F37021', '#3b82f6']
@@ -760,5 +759,5 @@
             ratioChart.update();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a7440fe2cd29c',t:'MTc4MzgwMDY1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19ab1c3cda7d2a6',t:'MTc4MzgwMzE3Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
