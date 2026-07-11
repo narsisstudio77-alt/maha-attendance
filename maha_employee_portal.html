@@ -40,8 +40,9 @@
         
         <!-- Connection Status Indicator -->
         <div id="connection-badge" class="mb-4 text-center">
-            <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-amber-200">
-                در حال بررسی اتصال به دیتابیس آنلاین گوگل شیت ماها...
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                متصل به دیتابیس ابری گوگل شیت ماها
             </span>
         </div>
         
@@ -58,7 +59,7 @@
         <!-- ================= TAB 1: CLOCK IN/OUT ================= -->
         <div id="clock-tab" class="space-y-6">
             
-            <!-- Employee Select & PIN Card -->
+            <!-- Employee Select & PIN Verification Card -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
                 <div>
                     <label class="block text-right text-xs font-extrabold text-slate-500 mb-1">نام خود را انتخاب کنید:</label>
@@ -82,7 +83,7 @@
             <!-- CAMERA SELFIE VERIFICATION BLOCK (Anti-buddy punching) -->
             <div id="selfie-card" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4 text-center">
                 <h3 class="text-xs font-black text-[#0F1E3D] text-right flex items-center gap-1 pb-2 border-b border-slate-100">
-                    📸 سلفی امنیتی حضور (الزامی و ضد تقلب)
+                    📸 تصویر سلفی حضور (الزامی جهت ثبت تردد)
                 </h3>
                 
                 <div class="relative w-48 h-48 mx-auto bg-slate-900 rounded-full overflow-hidden border-4 border-slate-200 flex items-center justify-center shadow-inner">
@@ -102,15 +103,6 @@
                         📸 گرفتن عکس جدید
                     </button>
                 </div>
-                <p class="text-[9px] text-slate-400">عکس سلفی شما هنگام ثبت ورود/خروج مستقیماً در گوگل شیت ذخیره می‌شود تا مدیر اصالت شما را تایید کند.</p>
-            </div>
-
-            <!-- GPS Status Block (Silent in background, no longer blocking if fails) -->
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-slate-500 text-xs flex justify-between items-center">
-                <span class="font-bold flex items-center gap-1">
-                    📍 بررسی موقعیت مکانی (GPS):
-                </span>
-                <span id="gps-feedback-text" class="font-mono text-[10px]">در حال بررسی...</span>
             </div>
 
             <!-- Punch In/Out Main Actions -->
@@ -125,7 +117,7 @@
 
                 <div class="space-y-2 text-right">
                     <label class="block text-xs font-bold text-slate-500">توضیحات کوتاه (اختیاری):</label>
-                    <input id="clock-note" type="text" placeholder="مثال: کارفرما در دفتر..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#F37021] focus:outline-none">
+                    <input id="clock-note" type="text" placeholder="توضیح کوتاه..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#F37021] focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 pt-2">
@@ -212,19 +204,19 @@
     <!-- JS Core -->
     <script>
         const DEFAULT_EMPLOYEES = [
-            { id: "EMP-101", name: "علی علوی", isRemote: false, pin: "1010" },
-            { id: "EMP-102", name: "رضا رضایی", isRemote: false, pin: "1020" },
-            { id: "EMP-103", name: "زهرا احمدی", isRemote: false, pin: "1030" },
-            { id: "EMP-104", name: "مریم حسینی", isRemote: true, pin: "1040" },
-            { id: "EMP-105", name: "محمد کریمی", isRemote: false, pin: "1050" }
+            { id: "EMP-101", name: "علی علوی", pin: "1010" },
+            { id: "EMP-102", name: "رضا رضایی", pin: "1020" },
+            { id: "EMP-103", name: "زهرا احمدی", pin: "1030" },
+            { id: "EMP-104", name: "مریم حسینی", pin: "1040" },
+            { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
+        // Decoupled Cloud URL (loaded dynamically from config.json!)
         let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjyTwheozZ0nyhnUgRjSLFXfoX49Z0mlkk3KbFxDqIu_XZGUWNd1IMgph0yHEFeeNU_A/exec"; 
 
         let employees = [];
         let logs = [];
         let leaves = [];
-        let gpsSettings = { enabled: true, lat: 35.7219, lon: 51.3347, radius: 150 };
         
         let localStream = null;
         let capturedPhotoBase64 = "";
@@ -232,7 +224,7 @@
         window.onload = function() {
             loadLocalFallback();
             loadConfigAndInit();
-            startCamera(); // Auto-start webcam on load
+            startCamera();
 
             setInterval(() => {
                 const now = new Date();
@@ -245,11 +237,9 @@
                 }
             }, 1000);
 
-            setInterval(syncWithGoogleSheets, 6000);
-            setInterval(updateGpsUI, 8000);
+            setInterval(syncWithGoogleSheets, 5000);
         };
 
-        // Camera functions
         function startCamera() {
             const video = document.getElementById("webcam");
             const placeholder = document.getElementById("camera-placeholder");
@@ -288,11 +278,8 @@
             canvas.width = video.videoWidth || 200;
             canvas.height = video.videoHeight || 200;
             
-            // Draw current frame into canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Convert to small low-res base64 string to keep payload small for Google Sheets!
-            capturedPhotoBase64 = canvas.toDataURL("image/jpeg", 0.5);
+            capturedPhotoBase64 = canvas.toDataURL("image/jpeg", 0.4); // Compress to keep payload light
             
             video.classList.add("hidden");
             canvas.classList.remove("hidden");
@@ -314,7 +301,12 @@
                     }
                 })
                 .catch(err => {
-                    updateConnectionBadge(false, "حالت تستی محلی");
+                    // Try with embedded default URL
+                    if (GOOGLE_WEB_APP_URL) {
+                        syncWithGoogleSheets();
+                    } else {
+                        updateConnectionBadge(false, "حالت تستی محلی");
+                    }
                 });
         }
 
@@ -330,9 +322,6 @@
             if (localStorage.getItem("maha_leaves")) {
                 leaves = JSON.parse(localStorage.getItem("maha_leaves"));
             }
-            if (localStorage.getItem("maha_gps_settings")) {
-                gpsSettings = JSON.parse(localStorage.getItem("maha_gps_settings"));
-            }
             populateDropdown();
         }
 
@@ -346,24 +335,22 @@
                         employees = data.employees;
                         logs = data.logs || [];
                         leaves = data.leaves || [];
-                        gpsSettings = data.gpsSettings || gpsSettings;
                         
                         localStorage.setItem("maha_employees", JSON.stringify(employees));
                         localStorage.setItem("maha_logs", JSON.stringify(logs));
                         localStorage.setItem("maha_leaves", JSON.stringify(leaves));
-                        localStorage.setItem("maha_gps_settings", JSON.stringify(gpsSettings));
 
                         updateConnectionBadge(true);
                         populateDropdown();
                     }
                 })
                 .catch(err => {
-                    updateConnectionBadge(false, "خطا در اتصال به گوگل شیت");
+                    updateConnectionBadge(false, "خطا در ارتباط با گوگل شیت");
                 });
         }
 
         function saveToGoogleSheets() {
-            const state = { employees, logs, leaves, gpsSettings };
+            const state = { employees, logs, leaves };
             
             localStorage.setItem("maha_employees", JSON.stringify(employees));
             localStorage.setItem("maha_logs", JSON.stringify(logs));
@@ -428,59 +415,8 @@
 
         function onEmployeeChange() {
             renderTabs();
-            updateGpsUI();
             document.getElementById("emp-pin-input").value = "";
-            startCamera(); // Restart camera for new user
-        }
-
-        function updateGpsUI() {
-            const text = document.getElementById("gps-feedback-text");
-            if (!text) return;
-
-            const empId = document.getElementById("emp-select").value;
-            const emp = employees.find(e => e.id === empId);
-
-            if (emp && emp.isRemote) {
-                text.innerText = "آزاد (شیفت دورکاری)";
-                text.className = "font-bold text-blue-600";
-                return;
-            }
-
-            if (!gpsSettings.enabled) {
-                text.innerText = "آزاد (قفل موقعیت‌یاب خاموش)";
-                text.className = "font-bold text-slate-500";
-                return;
-            }
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const dist = getDistance(position.coords.latitude, position.coords.longitude, gpsSettings.lat, gpsSettings.lon);
-                    if (dist <= gpsSettings.radius) {
-                        text.innerText = `مجاز (دفتر ماها - فاصله: ${dist.toFixed(0)} متر)`;
-                        text.className = "font-bold text-emerald-600";
-                    } else {
-                        text.innerText = `غیرمجاز (فاصله: ${(dist/1000).toFixed(1)} کیلومتر)`;
-                        text.className = "font-bold text-rose-600";
-                    }
-                }, err => {
-                    text.innerText = "خطا در دریافت لوکیشن گوشی";
-                    text.className = "font-bold text-amber-600";
-                });
-            }
-        }
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
-
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; 
+            startCamera();
         }
 
         function verifyEmployeePin(emp) {
@@ -583,18 +519,17 @@
             const emp = employees.find(e => e.id === empId);
             if (!emp) return;
 
-            // 1. Verify PIN
+            // 1. PIN Check
             if (!verifyEmployeePin(emp)) {
                 alert("❌ رمز عبور اختصاصی شما اشتباه است!");
                 return;
             }
 
-            // 2. Force Selfie Capture!
+            // 2. Selfie Capture Check
             if (!capturedPhotoBase64) {
-                // Try capturing current webcam frame directly
                 captureSelfie();
                 if (!capturedPhotoBase64) {
-                    alert("📸 گرفتن عکس سلفی امنیتی الزامی است! لطفاً دکمه «گرفتن عکس» را بزنید.");
+                    alert("📸 گرفتن عکس سلفی حضور الزامی است!");
                     return;
                 }
             }
@@ -610,10 +545,9 @@
                 type: type,
                 time: timeStr,
                 date: "1405/04/10",
-                status: emp.isRemote ? "دورکار" : "حاضر",
-                // Storing Base64 Selfie image string directly inside 'note' field to sync with Google Sheet database!
+                status: "حاضر",
                 note: note ? note : "",
-                selfie: capturedPhotoBase64 // Stored securely
+                selfie: capturedPhotoBase64
             };
 
             logs.push(newLog);
@@ -621,9 +555,9 @@
 
             document.getElementById("clock-note").value = "";
             document.getElementById("emp-pin-input").value = "";
-            startCamera(); // Restart camera
+            startCamera(); // reset
             renderTabs();
-            alert(`✅ تردد "${type}" برای ${emp.name} با سلفی امنیتی در دیتابیس ابری ثبت شد.`);
+            alert(`✅ تردد "${type}" با تصویر سلفی با موفقیت ثبت شد.`);
         }
 
         function submitLeave(e) {
@@ -660,8 +594,8 @@
             document.getElementById("emp-pin-input").value = "";
 
             renderTabs();
-            alert("✅ درخواست مرخصی با موفقیت ارسال و ابری همگام‌سازی شد.");
+            alert("✅ درخواست مرخصی با موفقیت ارسال شد.");
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a197a990d82639d4',t:'MTc4Mzc3MTM3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a197c37968ccd412',t:'MTc4Mzc3MjQ0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
