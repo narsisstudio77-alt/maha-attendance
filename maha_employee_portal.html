@@ -121,10 +121,10 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 pt-2">
-                    <button onclick="registerLog('ورود')" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs">
+                    <button id="btn-submit-in" onclick="registerLog('ورود')" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs">
                         📥 ثبت ورود به دفتر
                     </button>
-                    <button onclick="registerLog('خروج')" class="bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-600 hover:to-orange-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs">
+                    <button id="btn-submit-out" onclick="registerLog('خروج')" class="bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-600 hover:to-orange-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs">
                         📤 ثبت خروج از دفتر
                     </button>
                 </div>
@@ -168,7 +168,7 @@
                         <textarea id="leave-reason" rows="3" required placeholder="توضیحات..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#F37021] focus:outline-none"></textarea>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#0F1E3D] hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
+                    <button id="btn-submit-leave" type="submit" class="w-full bg-[#0F1E3D] hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
                         ✈️ ارسال درخواست مرخصی به مدیر
                     </button>
                 </form>
@@ -211,12 +211,12 @@
             { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
-        // Decoupled Cloud URL (loaded dynamically from config.json!)
         let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjyTwheozZ0nyhnUgRjSLFXfoX49Z0mlkk3KbFxDqIu_XZGUWNd1IMgph0yHEFeeNU_A/exec"; 
 
         let employees = [];
         let logs = [];
         let leaves = [];
+        let isSaving = false; // Prevents race condition overwrites!
         
         let localStream = null;
         let capturedPhotoBase64 = "";
@@ -237,7 +237,12 @@
                 }
             }, 1000);
 
-            setInterval(syncWithGoogleSheets, 5000);
+            // Fetch from Sheets every 6 seconds, ONLY if we are not actively saving!
+            setInterval(() => {
+                if (!isSaving) {
+                    syncWithGoogleSheets();
+                }
+            }, 6000);
         };
 
         function startCamera() {
@@ -269,7 +274,7 @@
             const video = document.getElementById("webcam");
             const canvas = document.getElementById("photo-canvas");
             
-            if (!video.srcObject) {
+            if (!video || !video.srcObject) {
                 alert("ابتدا دوربین را فعال کنید!");
                 return;
             }
@@ -279,7 +284,7 @@
             canvas.height = video.videoHeight || 200;
             
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            capturedPhotoBase64 = canvas.toDataURL("image/jpeg", 0.4); // Compress to keep payload light
+            capturedPhotoBase64 = canvas.toDataURL("image/jpeg", 0.4); 
             
             video.classList.add("hidden");
             canvas.classList.remove("hidden");
@@ -294,14 +299,12 @@
                 .then(config => {
                     if (config && config.google_url) {
                         GOOGLE_WEB_APP_URL = config.google_url;
-                        console.log("Loaded Google Sheets URL:", GOOGLE_WEB_APP_URL);
                         syncWithGoogleSheets();
                     } else {
                         updateConnectionBadge(false, "پیکربندی نشده (تست لوکال)");
                     }
                 })
                 .catch(err => {
-                    // Try with embedded default URL
                     if (GOOGLE_WEB_APP_URL) {
                         syncWithGoogleSheets();
                     } else {
@@ -326,11 +329,12 @@
         }
 
         function syncWithGoogleSheets() {
-            if (!GOOGLE_WEB_APP_URL) return;
+            if (!GOOGLE_WEB_APP_URL || isSaving) return;
             
             fetch(GOOGLE_WEB_APP_URL + "?action=get_data")
                 .then(res => res.json())
                 .then(data => {
+                    if (isSaving) return; // double-check to avoid overwriting during fetch transit
                     if (data && data.employees) {
                         employees = data.employees;
                         logs = data.logs || [];
@@ -349,14 +353,21 @@
                 });
         }
 
-        function saveToGoogleSheets() {
+        function saveToGoogleSheets(onSuccessCallback) {
+            isSaving = true; // Lock timer sync!
+            updateConnectionBadge(true, "در حال ذخیره‌سازی ابری...");
+            
             const state = { employees, logs, leaves };
             
             localStorage.setItem("maha_employees", JSON.stringify(employees));
             localStorage.setItem("maha_logs", JSON.stringify(logs));
             localStorage.setItem("maha_leaves", JSON.stringify(leaves));
 
-            if (!GOOGLE_WEB_APP_URL) return;
+            if (!GOOGLE_WEB_APP_URL) {
+                isSaving = false;
+                if (onSuccessCallback) onSuccessCallback();
+                return;
+            }
             
             fetch(GOOGLE_WEB_APP_URL + "?action=save_data", {
                 method: 'POST',
@@ -367,9 +378,16 @@
             .then(data => {
                 if (data.status === "success") {
                     updateConnectionBadge(true);
+                    // Short timeout to let the Google Servers settle before releasing lock
+                    setTimeout(() => {
+                        isSaving = false;
+                        if (onSuccessCallback) onSuccessCallback();
+                    }, 1500);
                 }
             })
             .catch(err => {
+                console.error("Save failed:", err);
+                isSaving = false;
                 updateConnectionBadge(false, "خطا در همگام‌سازی ابری");
             });
         }
@@ -381,7 +399,7 @@
                 badge.innerHTML = `
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        متصل به دیتابیس ابری گوگل شیت ماها 🟢
+                        ${msg || "متصل به دیتابیس ابری گوگل شیت ماها 🟢"}
                     </span>
                 `;
             } else {
@@ -538,6 +556,10 @@
             const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
             const note = document.getElementById("clock-note").value;
 
+            // Lock UI Buttons
+            document.getElementById("btn-submit-in").disabled = true;
+            document.getElementById("btn-submit-out").disabled = true;
+
             const newLog = {
                 logId: Date.now(),
                 empId: emp.id,
@@ -551,13 +573,16 @@
             };
 
             logs.push(newLog);
-            saveToGoogleSheets();
-
-            document.getElementById("clock-note").value = "";
-            document.getElementById("emp-pin-input").value = "";
-            startCamera(); // reset
-            renderTabs();
-            alert(`✅ تردد "${type}" با تصویر سلفی با موفقیت ثبت شد.`);
+            
+            saveToGoogleSheets(() => {
+                document.getElementById("btn-submit-in").disabled = false;
+                document.getElementById("btn-submit-out").disabled = false;
+                document.getElementById("clock-note").value = "";
+                document.getElementById("emp-pin-input").value = "";
+                startCamera(); // reset
+                renderTabs();
+                alert(`✅ تردد "${type}" با تصویر سلفی با موفقیت ثبت شد.`);
+            });
         }
 
         function submitLeave(e) {
@@ -575,6 +600,8 @@
             const end = document.getElementById("leave-end").value;
             const reason = document.getElementById("leave-reason").value;
 
+            document.getElementById("btn-submit-leave").disabled = true;
+
             const newLeave = {
                 leaveId: Date.now(),
                 empId: emp.id,
@@ -586,16 +613,17 @@
             };
 
             leaves.push(newLeave);
-            saveToGoogleSheets();
-
-            document.getElementById("leave-start").value = "";
-            document.getElementById("leave-end").value = "";
-            document.getElementById("leave-reason").value = "";
-            document.getElementById("emp-pin-input").value = "";
-
-            renderTabs();
-            alert("✅ درخواست مرخصی با موفقیت ارسال شد.");
+            
+            saveToGoogleSheets(() => {
+                document.getElementById("btn-submit-leave").disabled = false;
+                document.getElementById("leave-start").value = "";
+                document.getElementById("leave-end").value = "";
+                document.getElementById("leave-reason").value = "";
+                document.getElementById("emp-pin-input").value = "";
+                renderTabs();
+                alert("✅ درخواست مرخصی با موفقیت ارسال شد.");
+            });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a197c37968ccd412',t:'MTc4Mzc3MjQ0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19801ad290ea63e',t:'MTc4Mzc3NDk4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

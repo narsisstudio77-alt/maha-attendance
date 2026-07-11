@@ -126,20 +126,20 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
-                    <!-- Left Column: Quick Admin Manual Actions (Cleaned GPS completely!) -->
+                    <!-- Left Column: Guide -->
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 h-fit text-right">
                         <h3 class="text-sm font-extrabold text-[#0F1E3D] pb-2 border-b border-slate-100 flex items-center gap-1">
-                            ℹ️ راهنمای پایش امنیتی
+                            ℹ️ راهنمای پایش تصویری
                         </h3>
                         <p class="text-xs text-slate-500 leading-relaxed">
-                            در این سامانه، اصالت‌سنجی حضور کارکنان به صورت ۱۰۰٪ توسط **تصویر سلفی زنده** انجام می‌شود. 
+                            در این سامانه، تایید حضور به صورت زنده با تصویر سلفی پرسنل انجام می‌شود.
                         </p>
                         <p class="text-xs text-slate-500 leading-relaxed">
-                            در جدول سمت چپ، با هاور یا نگه داشتن انگشت روی آواتار کارمند، عکس سلفی او در لحظه دقیق ورود یا خروج با ابعاد بزرگتر نمایش داده می‌شود.
+                            با بردن ماوس روی عکس سلفی پرسنل، تصویر بزرگ شده را تماشا کنید.
                         </p>
                     </div>
 
-                    <!-- Right Column: Live Table with Selfie image cell! -->
+                    <!-- Right Column: Table WITH SELFIE IMAGES -->
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 lg:col-span-2">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-2 border-b border-slate-100">
                             <div>
@@ -253,13 +253,13 @@
                                 <input id="new-tab-pin" type="text" maxlength="6" value="1234" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-center focus:outline-none focus:ring-2 focus:ring-[#F37021]">
                             </div>
                             
-                            <button type="submit" class="w-full bg-[#F37021] hover:bg-[#d65e18] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
+                            <button id="btn-add-employee-submit" type="submit" class="w-full bg-[#F37021] hover:bg-[#d65e18] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
                                 ＋ ثبت و افزودن به اعضا
                             </button>
                         </form>
                     </div>
 
-                    <!-- Right: Employees Table List (Cleaned Remote work column entirely!) -->
+                    <!-- Right: Employees Table List -->
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 lg:col-span-2">
                         <div class="pb-3 border-b border-slate-100 mb-4 text-right">
                             <h3 class="text-sm font-extrabold text-[#0F1E3D]">
@@ -303,12 +303,13 @@
             { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
-        // Same Unique Online Sync Bucket
+        // Decoupled Cloud URL
         let CLOUD_URL = "https://script.google.com/macros/s/AKfycbxjyTwheozZ0nyhnUgRjSLFXfoX49Z0mlkk3KbFxDqIu_XZGUWNd1IMgph0yHEFeeNU_A/exec";
 
         let employees = [];
         let logs = [];
         let leaves = [];
+        let isSaving = false; // Lock variable to prevent sync overwrites
         let performanceChart = null;
         let ratioChart = null;
 
@@ -353,7 +354,13 @@
             loadLocalFallback();
             loadConfigAndInit();
             initCharts();
-            setInterval(syncWithCloud, 5000);
+            
+            // Periodically sync every 5 seconds, ONLY if we are not saving!
+            setInterval(() => {
+                if (!isSaving) {
+                    syncWithCloud();
+                }
+            }, 5000);
         }
 
         function loadLocalFallback() {
@@ -396,11 +403,12 @@
         }
 
         function syncWithCloud() {
-            if (!CLOUD_URL) return;
+            if (!CLOUD_URL || isSaving) return;
             
             fetch(CLOUD_URL + "?action=get_data")
                 .then(res => res.json())
                 .then(data => {
+                    if (isSaving) return; // safeguard
                     if (data && data.employees) {
                         employees = data.employees;
                         logs = data.logs || [];
@@ -418,28 +426,50 @@
                 .catch(() => updateSyncBadge(false, "خطا در ارتباط"));
         }
 
-        function saveToCloud() {
+        function saveToCloud(onSuccessCallback) {
+            isSaving = true; // Lock sync to prevent race conditions!
+            updateSyncBadge(true, "در حال ذخیره‌سازی ابری...");
+            
             const state = { employees, logs, leaves };
             
             localStorage.setItem("maha_employees", JSON.stringify(employees));
             localStorage.setItem("maha_logs", JSON.stringify(logs));
             localStorage.setItem("maha_leaves", JSON.stringify(leaves));
 
-            if (!CLOUD_URL) return;
+            if (!CLOUD_URL) {
+                isSaving = false;
+                if (onSuccessCallback) onSuccessCallback();
+                return;
+            }
 
             fetch(CLOUD_URL + "?action=save_data", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
-            }).then(() => updateSyncBadge(true))
-              .catch(() => updateSyncBadge(false, "خطا در بروزرسانی"));
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    updateSyncBadge(true);
+                    // Leave lock active for 1.5 seconds to ensure script fully completes
+                    setTimeout(() => {
+                        isSaving = false;
+                        if (onSuccessCallback) onSuccessCallback();
+                    }, 1500);
+                }
+            })
+            .catch(err => {
+                console.error("Save error:", err);
+                isSaving = false;
+                updateSyncBadge(false, "خطا در بروزرسانی");
+            });
         }
 
         function updateSyncBadge(online, msg) {
             const badge = document.getElementById("sync-status-badge");
             if (!badge) return;
             if (online) {
-                badge.innerText = "همگام‌سازی ابری گوگل شیت فعال 🟢";
+                badge.innerText = msg || "همگام‌سازی ابری گوگل شیت فعال 🟢";
                 badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
             } else {
                 badge.innerText = msg || "حالت آفلاین / تستی ⚠️";
@@ -589,19 +619,28 @@
                 return;
             }
 
-            employees.push({ id, name, pin });
-            saveToCloud();
+            // Lock Submit Button
+            document.getElementById("btn-add-employee-submit").disabled = true;
 
-            document.getElementById("new-tab-name").value = "";
-            document.getElementById("new-tab-id").value = "";
-            document.getElementById("new-tab-pin").value = "1234";
-            alert(`✅ همکار جدید "${name}" به لیست اضافه شد.`);
+            employees.push({ id, name, pin });
+            
+            // Save and Release Lock upon successful response!
+            saveToCloud(() => {
+                document.getElementById("btn-add-employee-submit").disabled = false;
+                document.getElementById("new-tab-name").value = "";
+                document.getElementById("new-tab-id").value = "";
+                document.getElementById("new-tab-pin").value = "1234";
+                loadLocalFallback();
+                alert(`✅ همکار جدید "${name}" به لیست اضافه و در گوگل شیت ذخیره شد.`);
+            });
         }
 
         function deleteEmployee(empId) {
             if (confirm(`آیا مطمئن هستید که می‌خواهید کارمند با شناسه ${empId} را حذف کنید؟`)) {
                 employees = employees.filter(emp => emp.id !== empId);
-                saveToCloud();
+                saveToCloud(() => {
+                    loadLocalFallback();
+                });
             }
         }
 
@@ -610,13 +649,17 @@
                 if (lv.leaveId === leaveId) return { ...lv, status: decision };
                 return lv;
             });
-            saveToCloud();
+            saveToCloud(() => {
+                loadLocalFallback();
+            });
         }
 
         function deleteLog(logId) {
             if (confirm("آیا از حذف این تردد مطمئن هستید؟")) {
                 logs = logs.filter(l => l.logId !== logId);
-                saveToCloud();
+                saveToCloud(() => {
+                    loadLocalFallback();
+                });
             }
         }
 
@@ -625,7 +668,9 @@
                 employees = DEFAULT_EMPLOYEES;
                 logs = [];
                 leaves = [];
-                saveToCloud();
+                saveToCloud(() => {
+                    loadLocalFallback();
+                });
             }
         }
 
@@ -721,5 +766,5 @@
             ratioChart.update();
         }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a197fdfd7a901e0c',t:'MTc4Mzc3NDgzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
