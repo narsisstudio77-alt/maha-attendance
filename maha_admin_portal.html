@@ -18,7 +18,7 @@
 </head>
 <body class="text-slate-800 flex flex-col min-h-screen">
 
-    <!-- PASSWORD GATE / PROTECTION OVERLAY (WITH SHOW/HIDE PASSWORD OPTION) -->
+    <!-- PASSWORD GATE -->
     <div id="password-gate" class="fixed inset-0 bg-[#0F1E3D] z-[9999] flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border-t-8 border-[#F37021] text-center space-y-6">
             <div class="bg-blue-50 w-20 h-20 rounded-2xl mx-auto flex items-center justify-center">
@@ -29,27 +29,22 @@
                 <p class="text-xs text-slate-400 mt-1">لطفاً رمز عبور مدیریت ارشد را وارد کنید.</p>
             </div>
             <div class="space-y-4">
-                
-                <!-- Password Wrapper with Eye Icon -->
                 <div class="relative">
                     <input id="admin-password-input" type="password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-center text-sm font-bold tracking-widest focus:ring-2 focus:ring-[#F37021] focus:outline-none transition-all">
-                    
-                    <!-- Eye Icon (Absolute positioning on the left because text is centered/RTL) -->
                     <button type="button" onclick="togglePasswordVisibility()" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 text-sm">
                         <span id="eye-icon">👁️</span>
                     </button>
                 </div>
-                
                 <p id="password-error" class="text-[10px] text-rose-500 font-bold hidden">⚠️ رمز عبور اشتباه است!</p>
                 <button onclick="verifyAdminPassword()" class="w-full bg-[#F37021] hover:bg-[#d65e18] text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md">
                     🔒 تایید و ورود امن
                 </button>
             </div>
-            <p class="text-[9px] text-slate-400">راهنما: رمز پیش‌فرض برای دمو <strong>Maha2026</strong> است.</p>
+            <p class="text-[9px] text-slate-400">رمز پیش‌فرض برای دمو <strong>Maha2026</strong> است.</p>
         </div>
     </div>
 
-    <!-- MAIN APP CONTENT (Hidden until password verified) -->
+    <!-- MAIN APP CONTENT -->
     <div id="admin-main-app" class="hidden flex flex-col min-h-screen">
         
         <!-- Header -->
@@ -69,8 +64,8 @@
                     <button onclick="lockAdminPortal()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl font-bold transition-all">
                         🔒 خروج امن
                     </button>
-                    <span id="connection-badge" class="text-xs bg-slate-800 text-slate-400 px-3 py-1.5 rounded-xl font-mono">
-                        در حال بررسی...
+                    <span id="sync-status-badge" class="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">
+                        همگام‌سازی ابری زنده فعال
                     </span>
                 </div>
             </div>
@@ -82,7 +77,7 @@
             <!-- Tab Navigation -->
             <div class="flex flex-wrap bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 gap-1">
                 <button onclick="switchAdminTab('monitor-tab')" id="btn-monitor-tab" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all bg-[#0F1E3D] text-white">
-                    📊 پایش لحظه‌ای و مانیتورینگ
+                    📊 پایش زنده و مانیتورینگ
                 </button>
                 <button onclick="switchAdminTab('leaves-tab')" id="btn-leaves-tab" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black text-slate-600 hover:text-slate-950 transition-all">
                     🌴 تایید درخواست‌های مرخصی <span id="pending-count-badge" class="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] mr-1 hidden">0</span>
@@ -90,12 +85,14 @@
                 <button onclick="switchAdminTab('charts-tab')" id="btn-charts-tab" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black text-slate-600 hover:text-slate-950 transition-all">
                     📈 نمودارهای گرافیکی عملکرد ماهانه
                 </button>
+                <button onclick="switchAdminTab('employees-tab')" id="btn-employees-tab" class="flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black text-slate-600 hover:text-slate-950 transition-all">
+                    👥 مدیریت و لیست کارکنان
+                </button>
             </div>
 
             <!-- ================= TAB 1: MONITOR & LOGS ================= -->
             <div id="monitor-tab" class="space-y-6">
                 
-                <!-- Quick Stat Badges -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center justify-between">
                         <div>
@@ -129,34 +126,35 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
-                    <!-- Left: Controls -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6 h-fit">
+                    <!-- Left: GPS Security Configuration -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5 h-fit">
                         <h3 class="text-sm font-extrabold text-[#0F1E3D] pb-2 border-b border-slate-100">
-                            ⚙️ مدیریت پرسنل و تنظیمات GPS
+                            🔒 تنظیمات محدوده جغرافیایی (قفل ضد تقلب)
                         </h3>
                         
-                        <form id="add-emp-form" onsubmit="addEmployee(event)" class="space-y-3">
-                            <p class="text-[11px] font-bold text-slate-500">افزودن عضو جدید:</p>
-                            <input id="new-emp-name" type="text" placeholder="نام و نام خانوادگی" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
-                            <div class="grid grid-cols-2 gap-2">
-                                <input id="new-emp-id" type="text" placeholder="شناسه (EMP-106)" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
-                                <button type="submit" class="bg-[#F37021] hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition-all">
-                                    ＋ افزودن
-                                </button>
+                        <div class="space-y-3 text-right text-xs">
+                            <div>
+                                <label class="block font-bold text-slate-500 mb-1">امنیت مکان‌یابی فعال باشد؟</label>
+                                <select id="gps-enabled-select" onchange="saveGpsSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold">
+                                    <option value="true">بله، ورود فقط در دفتر مجاز باشد</option>
+                                    <option value="false">خیر، ورود آزاد باشد (دورکاری)</option>
+                                </select>
                             </div>
-                        </form>
-
-                        <div class="pt-4 border-t border-slate-100 space-y-2">
-                            <p class="text-[11px] font-bold text-slate-500">🔒 قفل ضدتقلب فعال است:</p>
-                            <div class="bg-blue-50/50 p-3 rounded-xl text-xs text-slate-600 space-y-1">
-                                <p><strong>نوع اتصال:</strong> همگام‌سازی ابری آنلاین</p>
-                                <p class="text-[10px] text-slate-400">اطلاعات تمام پرسنل از طریق اینترنت موبایل مستقیماً در دیتابیس آنلاین مدیریت ثبت و با گوشی مدیر همگام می‌شود.</p>
+                            <div>
+                                <label class="block font-bold text-slate-500 mb-1">عرض جغرافیایی دفتر (Latitude):</label>
+                                <input id="gps-lat" type="number" step="any" onchange="saveGpsSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-mono">
                             </div>
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-100">
-                            <button onclick="resetData()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition-all">
-                                🔄 بازنشانی داده‌های تستی
+                            <div>
+                                <label class="block font-bold text-slate-500 mb-1">طول جغرافیایی دفتر (Longitude):</label>
+                                <input id="gps-lon" type="number" step="any" onchange="saveGpsSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-500 mb-1">شعاع مجاز خطا (بر حسب متر):</label>
+                                <input id="gps-radius" type="number" onchange="saveGpsSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-mono">
+                            </div>
+                            
+                            <button onclick="setCurrentPositionAsOffice()" class="w-full bg-[#0F1E3D] hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-[10px] transition-all flex items-center justify-center gap-1">
+                                📍 ثبت موقعیت فعلی من به عنوان مکان شرکت
                             </button>
                         </div>
                     </div>
@@ -180,7 +178,7 @@
                                     <tr class="text-slate-400 border-b border-slate-100">
                                         <th class="pb-3 text-center">ردیف</th>
                                         <th class="pb-3">کارمند</th>
-                                        <th class="pb-3 text-center">نوع</th>
+                                        <th class="pb-3 text-center">نوع ثبت</th>
                                         <th class="pb-3 text-center">ساعت ثبت</th>
                                         <th class="pb-3 text-center">وضعیت</th>
                                         <th class="pb-3 text-center">کل کارکرد</th>
@@ -192,9 +190,6 @@
                                     <!-- Dynamic -->
                                 </tbody>
                             </table>
-                            <div id="no-logs" class="text-center py-8 text-slate-400 hidden">
-                                هیچ ترددی هنوز ثبت نشده است.
-                            </div>
                         </div>
                     </div>
 
@@ -227,9 +222,6 @@
                                 <!-- Dynamic -->
                             </tbody>
                         </table>
-                        <div id="no-leaves" class="text-center py-8 text-slate-400 hidden">
-                            هیچ درخواست مرخصی در انتظار تایید نیست.
-                        </div>
                     </div>
                 </div>
             </div>
@@ -257,40 +249,108 @@
                 </div>
             </div>
 
+            <!-- ================= TAB 4: EMPLOYEE MANAGEMENT ================= -->
+            <div id="employees-tab" class="space-y-6 hidden">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Left: Add New Employee Form -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-fit text-right space-y-4">
+                        <h3 class="text-sm font-extrabold text-[#0F1E3D] pb-2 border-b border-slate-100">
+                            👤 افزودن کارمند جدید
+                        </h3>
+                        <form id="add-emp-form-tab" onsubmit="addEmployeeDirect(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">نام و نام خانوادگی:</label>
+                                <input id="new-tab-name" type="text" placeholder="مثال: رضا کریمی" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#F37021]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">شناسه استخدامی (Employee ID):</label>
+                                <input id="new-tab-id" type="text" placeholder="مثال: EMP-106" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#F37021]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">رمز عبور اختصاصی پرسنل (۴ رقمی):</label>
+                                <input id="new-tab-pin" type="text" maxlength="6" value="1234" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-center focus:outline-none focus:ring-2 focus:ring-[#F37021]">
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-[#F37021] hover:bg-[#d65e18] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md">
+                                ＋ ثبت و افزودن به اعضا
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Employees Table List (With Telecommuting Toggle & PIN Display) -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 lg:col-span-2">
+                        <div class="pb-3 border-b border-slate-100 mb-4 text-right">
+                            <h3 class="text-sm font-extrabold text-[#0F1E3D]">
+                                👥 مدیریت و لیست همکاران آژانس ماها
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-1">تغییرات شما فوراً و با اینترنت روی موبایل تمام پرسنل همگام‌سازی می‌شود.</p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-100">
+                                        <th class="pb-3">شناسه پرسنلی</th>
+                                        <th class="pb-3">نام و نام خانوادگی</th>
+                                        <th class="pb-3 text-center">رمز ورود اختصاصی</th>
+                                        <th class="pb-3 text-center">نوع کارکرد (حضوری/دورکار)</th>
+                                        <th class="pb-3 text-center">ترددهای امروز</th>
+                                        <th class="pb-3 text-center">عملیات مدیریت</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employees-table-body" class="divide-y divide-slate-100">
+                                    <!-- Dynamic -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
         </main>
     </div>
 
     <!-- JS Core -->
     <script>
         const DEFAULT_EMPLOYEES = [
-            { id: "EMP-101", name: "علی علوی" },
-            { id: "EMP-102", name: "رضا رضایی" },
-            { id: "EMP-103", name: "زهرا احمدی" },
-            { id: "EMP-104", name: "مریم حسینی" },
-            { id: "EMP-105", name: "محمد کریمی" }
+            { id: "EMP-101", name: "علی علوی", isRemote: false, pin: "1010" },
+            { id: "EMP-102", name: "رضا رضایی", isRemote: false, pin: "1020" },
+            { id: "EMP-103", name: "زهرا احمدی", isRemote: false, pin: "1030" },
+            { id: "EMP-104", name: "مریم حسینی", isRemote: true, pin: "1040" },
+            { id: "EMP-105", name: "محمد کریمی", isRemote: false, pin: "1050" }
         ];
+
+        const CLOUD_URL = "https://jsonbin-zeta.vercel.app/api/bins/d_LSqHYmsp";
 
         let employees = [];
         let logs = [];
         let leaves = [];
         let performanceChart = null;
         let ratioChart = null;
-        let isUsingServer = false;
+        
+        let gpsSettings = {
+            enabled: true,
+            lat: 35.7219,
+            lon: 51.3347,
+            radius: 150
+        };
 
-        // Toggle Password Visibility Function
         function togglePasswordVisibility() {
             const pwdInput = document.getElementById("admin-password-input");
             const eyeIcon = document.getElementById("eye-icon");
             if (pwdInput.type === "password") {
                 pwdInput.type = "text";
-                eyeIcon.innerText = "🙈"; // Closed eyes
+                eyeIcon.innerText = "🙈";
             } else {
                 pwdInput.type = "password";
-                eyeIcon.innerText = "👁️"; // Open eye
+                eyeIcon.innerText = "👁️";
             }
         }
 
-        // Verify Passcode
         function verifyAdminPassword() {
             const val = document.getElementById("admin-password-input").value;
             if (val === "Maha2026") {
@@ -299,8 +359,7 @@
                 sessionStorage.setItem("maha_admin_authenticated", "true");
                 initApp();
             } else {
-                const err = document.getElementById("password-error");
-                err.classList.remove("hidden");
+                document.getElementById("password-error").classList.remove("hidden");
             }
         }
 
@@ -318,88 +377,121 @@
         };
 
         function initApp() {
-            checkServerConnection();
+            loadLocalFallback();
+            syncWithCloud();
             initCharts();
+            setInterval(syncWithCloud, 4000);
         }
 
-        function checkServerConnection() {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(data => {
-                    isUsingServer = true;
-                    updateConnectionBadge(true);
-                    syncWithServer();
-                    setInterval(syncWithServer, 4000);
-                })
-                .catch(err => {
-                    isUsingServer = false;
-                    updateConnectionBadge(false);
-                    loadFromLocalStorage();
-                });
-        }
-
-        function updateConnectionBadge(online) {
-            const badge = document.getElementById("connection-badge");
-            if (online) {
-                badge.innerText = "اتصال: دیتابیس ابری ماها";
-                badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
-            } else {
-                badge.innerText = "اتصال: حالت تستی مرورگر (آفلاین)";
-                badge.className = "text-xs bg-amber-600 text-white px-3 py-1.5 rounded-xl font-bold";
-            }
-        }
-
-        function loadFromLocalStorage() {
+        function loadLocalFallback() {
             if (localStorage.getItem("maha_employees")) {
                 employees = JSON.parse(localStorage.getItem("maha_employees"));
             } else {
                 employees = DEFAULT_EMPLOYEES;
-                localStorage.setItem("maha_employees", JSON.stringify(employees));
             }
             if (localStorage.getItem("maha_logs")) {
                 logs = JSON.parse(localStorage.getItem("maha_logs"));
-            } else {
-                logs = [];
-                localStorage.setItem("maha_logs", JSON.stringify(logs));
             }
             if (localStorage.getItem("maha_leaves")) {
                 leaves = JSON.parse(localStorage.getItem("maha_leaves"));
-            } else {
-                leaves = [];
-                localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+            }
+            if (localStorage.getItem("maha_gps_settings")) {
+                gpsSettings = JSON.parse(localStorage.getItem("maha_gps_settings"));
             }
             renderDashboard();
+            populateGpsInputs();
         }
 
-        function syncWithServer() {
-            fetch('/api/data')
+        function syncWithCloud() {
+            fetch(CLOUD_URL)
                 .then(res => res.json())
                 .then(data => {
-                    employees = data.employees || DEFAULT_EMPLOYEES;
-                    logs = data.logs || [];
-                    leaves = data.leaves || [];
-                    renderDashboard();
-                    updateCharts();
-                });
+                    if (data && data.employees) {
+                        employees = data.employees;
+                        logs = data.logs || [];
+                        leaves = data.leaves || [];
+                        gpsSettings = data.gpsSettings || gpsSettings;
+                        
+                        localStorage.setItem("maha_employees", JSON.stringify(employees));
+                        localStorage.setItem("maha_logs", JSON.stringify(logs));
+                        localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+                        localStorage.setItem("maha_gps_settings", JSON.stringify(gpsSettings));
+
+                        updateSyncBadge(true);
+                        renderDashboard();
+                        updateCharts();
+                        populateGpsInputs();
+                    }
+                })
+                .catch(() => updateSyncBadge(false));
         }
 
-        function sendDataToServer() {
-            if (!isUsingServer) return;
-            fetch('/api/save', {
-                method: 'POST',
+        function saveToCloud() {
+            const state = { employees, logs, leaves, gpsSettings };
+            
+            localStorage.setItem("maha_employees", JSON.stringify(employees));
+            localStorage.setItem("maha_logs", JSON.stringify(logs));
+            localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+            localStorage.setItem("maha_gps_settings", JSON.stringify(gpsSettings));
+
+            fetch(CLOUD_URL, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employees, logs, leaves })
-            });
+                body: JSON.stringify(state)
+            }).then(() => updateSyncBadge(true))
+              .catch(() => updateSyncBadge(false));
+        }
+
+        function updateSyncBadge(online) {
+            const badge = document.getElementById("sync-status-badge");
+            if (online) {
+                badge.innerText = "همگام‌سازی ابری زنده فعال";
+                badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
+            } else {
+                badge.innerText = "ارتباط قطع شد (کارهای شما بعد از اتصال همگام می‌شود)";
+                badge.className = "text-xs bg-amber-600 text-white px-3 py-1.5 rounded-xl font-bold";
+            }
+        }
+
+        function populateGpsInputs() {
+            document.getElementById("gps-enabled-select").value = gpsSettings.enabled.toString();
+            document.getElementById("gps-lat").value = gpsSettings.lat;
+            document.getElementById("gps-lon").value = gpsSettings.lon;
+            document.getElementById("gps-radius").value = gpsSettings.radius;
+        }
+
+        function saveGpsSettings() {
+            gpsSettings.enabled = document.getElementById("gps-enabled-select").value === "true";
+            gpsSettings.lat = parseFloat(document.getElementById("gps-lat").value) || 35.7219;
+            gpsSettings.lon = parseFloat(document.getElementById("gps-lon").value) || 51.3347;
+            gpsSettings.radius = parseInt(document.getElementById("gps-radius").value) || 150;
+            
+            saveToCloud();
+        }
+
+        function setCurrentPositionAsOffice() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById("gps-lat").value = pos.coords.latitude;
+                    document.getElementById("gps-lon").value = pos.coords.longitude;
+                    saveGpsSettings();
+                    alert("📍 موقعیت جغرافیایی فعلی شما با موفقیت به عنوان مختصات شرکت ماها ذخیره شد.");
+                }, err => {
+                    alert("خطا در دریافت مکان فعلی شما!");
+                });
+            }
         }
 
         function switchAdminTab(tabId) {
             document.getElementById("monitor-tab").classList.add("hidden");
             document.getElementById("leaves-tab").classList.add("hidden");
             document.getElementById("charts-tab").classList.add("hidden");
+            document.getElementById("employees-tab").classList.add("hidden");
 
             document.getElementById("btn-monitor-tab").className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all text-slate-600 hover:text-slate-950";
             document.getElementById("btn-leaves-tab").className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all text-slate-600 hover:text-slate-950";
             document.getElementById("btn-charts-tab").className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all text-slate-600 hover:text-slate-950";
+            document.getElementById("btn-employees-tab").className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all text-slate-600 hover:text-slate-950";
 
             document.getElementById(tabId).classList.remove("hidden");
             if (tabId === 'monitor-tab') {
@@ -409,8 +501,31 @@
             } else if (tabId === 'charts-tab') {
                 document.getElementById("btn-" + tabId).className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all bg-[#0F1E3D] text-white";
                 setTimeout(updateCharts, 100);
+            } else if (tabId === 'employees-tab') {
+                document.getElementById("btn-" + tabId).className = "flex-1 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all bg-[#0F1E3D] text-white";
             }
             renderDashboard();
+        }
+
+        function toggleEmployeeRemote(empId) {
+            employees = employees.map(emp => {
+                if (emp.id === empId) {
+                    return { ...emp, isRemote: !emp.isRemote };
+                }
+                return emp;
+            });
+            saveToCloud();
+        }
+
+        // Live Pin edit directly from admin panel
+        function changeEmployeePin(empId, newPin) {
+            employees = employees.map(emp => {
+                if (emp.id === empId) {
+                    return { ...emp, pin: newPin.toString() };
+                }
+                return emp;
+            });
+            saveToCloud();
         }
 
         function renderDashboard() {
@@ -447,95 +562,129 @@
 
             // Live Table
             const tbody = document.getElementById("monitor-table-body");
-            const noLogs = document.getElementById("no-logs");
             tbody.innerHTML = "";
-
-            if (logs.length === 0) {
-                noLogs.classList.remove("hidden");
-            } else {
-                noLogs.classList.add("hidden");
-                logs.forEach((log, idx) => {
-                    const isEntry = log.type === "ورود";
-                    const bClass = isEntry ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-rose-50 text-rose-700 border border-rose-100";
-                    
-                    let durationText = "-";
-                    if (log.type === "خروج") {
-                        const prevLogs = logs.filter((l, i) => i < idx && l.empId === log.empId && l.type === "ورود");
-                        if (prevLogs.length > 0) {
-                            const prevEntry = prevLogs[prevLogs.length - 1];
-                            const [h1, m1] = prevEntry.time.split(":").map(Number);
-                            const [h2, m2] = log.time.split(":").map(Number);
-                            const diffMin = (h2 * 60 + m2) - (h1 * 60 + m1);
-                            if (diffMin > 0) durationText = (diffMin / 60).toFixed(1) + " ساعت";
-                        }
+            logs.forEach((log, idx) => {
+                const isEntry = log.type === "ورود";
+                const bClass = isEntry ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-rose-50 text-rose-700 border border-rose-100";
+                
+                let durationText = "-";
+                if (log.type === "خروج") {
+                    const prevLogs = logs.filter((l, i) => i < idx && l.empId === log.empId && l.type === "ورود");
+                    if (prevLogs.length > 0) {
+                        const prevEntry = prevLogs[prevLogs.length - 1];
+                        const [h1, m1] = prevEntry.time.split(":").map(Number);
+                        const [h2, m2] = log.time.split(":").map(Number);
+                        const diffMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        if (diffMin > 0) durationText = (diffMin / 60).toFixed(1) + " ساعت";
                     }
+                }
 
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="py-2.5 text-center text-slate-400 font-bold">${idx + 1}</td>
-                            <td class="py-2.5 font-semibold text-[#0F1E3D]">${log.empName} <span class="text-[10px] text-slate-400 block">${log.empId}</span></td>
-                            <td class="py-2.5 text-center"><span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${bClass}">${log.type}</span></td>
-                            <td class="py-2.5 text-center font-mono font-bold text-slate-600">${log.time}</td>
-                            <td class="py-2.5 text-center text-[10px] font-bold text-[#0F1E3D]">${log.status}</td>
-                            <td class="py-2.5 text-center font-bold text-slate-700">${durationText}</td>
-                            <td class="py-2.5 text-slate-500 max-w-[120px] truncate" title="${log.note || ""}">${log.note || "-"}</td>
-                            <td class="py-2.5 text-center">
-                                <button onclick="deleteLog(${log.logId})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 rounded-lg">🗑️</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-2.5 text-center text-slate-400 font-bold">${idx + 1}</td>
+                        <td class="py-2.5 font-semibold text-[#0F1E3D]">${log.empName} <span class="text-[10px] text-slate-400 block">${log.empId}</span></td>
+                        <td class="py-2.5 text-center"><span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${bClass}">${log.type}</span></td>
+                        <td class="py-2.5 text-center font-mono font-bold text-slate-600">${log.time}</td>
+                        <td class="py-2.5 text-center text-[10px] font-bold text-[#0F1E3D]">${log.status}</td>
+                        <td class="py-2.5 text-center font-bold text-slate-700">${durationText}</td>
+                        <td class="py-2.5 text-slate-500 max-w-[120px] truncate">${log.note || "-"}</td>
+                        <td class="py-2.5 text-center">
+                            <button onclick="deleteLog(${log.logId})" class="text-rose-500 hover:text-rose-700">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
 
             // Leaves Table
             const leavesBody = document.getElementById("leaves-table-body");
-            const noLeaves = document.getElementById("no-leaves");
             leavesBody.innerHTML = "";
             const pendingLeaves = leaves.filter(l => l.status === "Pending");
-            
-            const badge = document.getElementById("pending-count-badge");
+            document.getElementById("pending-count-badge").innerText = pendingLeaves.length;
             if (pendingLeaves.length > 0) {
-                badge.innerText = pendingLeaves.length;
-                badge.classList.remove("hidden");
+                document.getElementById("pending-count-badge").classList.remove("hidden");
             } else {
-                badge.classList.add("hidden");
+                document.getElementById("pending-count-badge").classList.add("hidden");
             }
 
-            if (leaves.length === 0) {
-                noLeaves.classList.remove("hidden");
-            } else {
-                noLeaves.classList.add("hidden");
-                leaves.forEach(lv => {
-                    let statusLabel = "";
-                    let actionButtons = "";
+            leaves.forEach(lv => {
+                let statusLabel = lv.status === "Pending" ? 
+                    `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-[10px] font-extrabold">⏱️ در انتظار بررسی</span>` :
+                    (lv.status === "Approved" ? `<span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-[10px] font-extrabold">✅ تایید شد</span>` :
+                    `<span class="bg-rose-100 text-rose-800 px-2 py-1 rounded-full text-[10px] font-extrabold">❌ رد شد</span>`);
 
-                    if (lv.status === "Pending") {
-                        statusLabel = `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-[10px] font-extrabold">⏱️ در انتظار بررسی</span>`;
-                        actionButtons = `
-                            <div class="flex justify-center gap-1">
-                                <button onclick="decideLeave(${lv.leaveId}, 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-all">تایید مرخصی</button>
-                                <button onclick="decideLeave(${lv.leaveId}, 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-all">رد</button>
-                            </div>
-                        `;
-                    } else if (lv.status === "Approved") {
-                        statusLabel = `<span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-[10px] font-extrabold">✅ تایید شد</span>`;
-                        actionButtons = `-`;
-                    } else {
-                        statusLabel = `<span class="bg-rose-100 text-rose-800 px-2 py-1 rounded-full text-[10px] font-extrabold">❌ رد شد</span>`;
-                        actionButtons = `-`;
-                    }
+                let actionButtons = lv.status === "Pending" ? `
+                    <div class="flex justify-center gap-1">
+                        <button onclick="decideLeave(${lv.leaveId}, 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px]">تایید</button>
+                        <button onclick="decideLeave(${lv.leaveId}, 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px]">رد</button>
+                    </div>` : "-";
 
-                    leavesBody.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="py-3 font-semibold text-[#0F1E3D]">${lv.empName} <span class="text-[10px] text-slate-400 block">${lv.empId}</span></td>
-                            <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.start}</td>
-                            <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.end}</td>
-                            <td class="py-3 text-slate-500 text-xs leading-relaxed max-w-[200px] truncate" title="${lv.reason}">${lv.reason}</td>
-                            <td class="py-3 text-center">${statusLabel}</td>
-                            <td class="py-3 text-center">${actionButtons}</td>
-                        </tr>
-                    `;
-                });
+                leavesBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 font-semibold text-[#0F1E3D]">${lv.empName} <span class="text-[10px] text-slate-400 block">${lv.empId}</span></td>
+                        <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.start}</td>
+                        <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.end}</td>
+                        <td class="py-3 text-slate-500 text-xs leading-relaxed max-w-[200px] truncate" title="${lv.reason}">${lv.reason}</td>
+                        <td class="py-3 text-center">${statusLabel}</td>
+                        <td class="py-3 text-center">${actionButtons}</td>
+                    </tr>
+                `;
+            });
+
+            // Employees Management Tab Table
+            const empBody = document.getElementById("employees-table-body");
+            empBody.innerHTML = "";
+            employees.forEach(emp => {
+                const empLogsToday = logs.filter(l => l.empId === emp.id).length;
+                
+                const remoteBadge = emp.isRemote ? 
+                    `<button onclick="toggleEmployeeRemote('${emp.id}')" class="bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 px-3 py-1 rounded-xl text-[10px] font-bold transition-all">🌴 دورکار</button>` :
+                    `<button onclick="toggleEmployeeRemote('${emp.id}')" class="bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 px-3 py-1 rounded-xl text-[10px] font-bold transition-all">🏢 حضوری</button>`;
+
+                const empPin = emp.pin || "1234";
+
+                empBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 font-mono font-bold text-slate-500">${emp.id}</td>
+                        <td class="py-3 font-semibold text-[#0F1E3D]">${emp.name}</td>
+                        <td class="py-3 text-center">
+                            <input type="text" value="${empPin}" onchange="changeEmployeePin('${emp.id}', this.value)" class="w-16 bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-[#0F1E3D] py-1 text-xs focus:ring-1 focus:ring-[#F37021] focus:outline-none">
+                        </td>
+                        <td class="py-3 text-center">${remoteBadge}</td>
+                        <td class="py-3 text-center text-slate-600 font-bold">${empLogsToday} بار</td>
+                        <td class="py-3 text-center">
+                            <button onclick="deleteEmployee('${emp.id}')" class="text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 font-bold py-1.5 px-3 rounded-xl text-[10px] transition-all">
+                                🗑️ حذف همکار
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addEmployeeDirect(e) {
+            e.preventDefault();
+            const name = document.getElementById("new-tab-name").value.trim();
+            const id = document.getElementById("new-tab-id").value.trim().toUpperCase();
+            const pin = document.getElementById("new-tab-pin").value.trim() || "1234";
+
+            if (employees.some(emp => emp.id === id)) {
+                alert("این شناسه استخدامی قبلاً استفاده شده است.");
+                return;
+            }
+
+            employees.push({ id, name, pin, isRemote: false });
+            saveToCloud();
+
+            document.getElementById("new-tab-name").value = "";
+            document.getElementById("new-tab-id").value = "";
+            document.getElementById("new-tab-pin").value = "1234";
+            alert(`✅ همکار جدید "${name}" به لیست اضافه شد.`);
+        }
+
+        function deleteEmployee(empId) {
+            if (confirm(`آیا مطمئن هستید که می‌خواهید کارمند با شناسه ${empId} را حذف کنید؟`)) {
+                employees = employees.filter(emp => emp.id !== empId);
+                saveToCloud();
             }
         }
 
@@ -544,61 +693,23 @@
                 if (lv.leaveId === leaveId) return { ...lv, status: decision };
                 return lv;
             });
-            if (isUsingServer) {
-                sendDataToServer();
-            } else {
-                localStorage.setItem("maha_leaves", JSON.stringify(leaves));
-            }
-            renderDashboard();
-            updateCharts();
-        }
-
-        function addEmployee(e) {
-            e.preventDefault();
-            const name = document.getElementById("new-emp-name").value.trim();
-            const id = document.getElementById("new-emp-id").value.trim().toUpperCase();
-
-            if (employees.some(emp => emp.id === id)) {
-                alert("این شناسه وجود دارد.");
-                return;
-            }
-
-            employees.push({ id, name });
-            if (isUsingServer) {
-                sendDataToServer();
-            } else {
-                localStorage.setItem("maha_employees", JSON.stringify(employees));
-            }
-
-            document.getElementById("new-emp-name").value = "";
-            document.getElementById("new-emp-id").value = "";
-            renderDashboard();
-            updateCharts();
+            saveToCloud();
         }
 
         function deleteLog(logId) {
             if (confirm("آیا از حذف این تردد مطمئن هستید؟")) {
                 logs = logs.filter(l => l.logId !== logId);
-                if (isUsingServer) {
-                    sendDataToServer();
-                } else {
-                    localStorage.setItem("maha_logs", JSON.stringify(logs));
-                }
-                renderDashboard();
-                updateCharts();
+                saveToCloud();
             }
         }
 
         function resetData() {
-            if (confirm("داده‌ها به حالت اول بازنشانی شوند؟")) {
-                if (isUsingServer) {
-                    fetch('/api/reset', { method: 'POST' }).then(() => syncWithServer());
-                } else {
-                    localStorage.removeItem("maha_employees");
-                    localStorage.removeItem("maha_logs");
-                    localStorage.removeItem("maha_leaves");
-                    loadFromLocalStorage();
-                }
+            if (confirm("ریست کامل؟")) {
+                employees = DEFAULT_EMPLOYEES;
+                logs = [];
+                leaves = [];
+                gpsSettings = { enabled: true, lat: 35.7219, lon: 51.3347, radius: 150 };
+                saveToCloud();
             }
         }
 
@@ -694,5 +805,5 @@
             ratioChart.update();
         }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1964c9ebd6adcc2',t:'MTc4Mzc1NzA4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

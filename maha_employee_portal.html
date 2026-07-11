@@ -6,6 +6,8 @@
     <title>پنل پرسنلی ثبت تردد آژانس ماها (MAHA)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F1E3D">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap');
         body {
@@ -25,7 +27,7 @@
                 </div>
                 <div>
                     <h1 class="text-base md:text-lg font-black tracking-wide text-white">پنل ثبت تردد پرسنل ماها</h1>
-                    <p class="text-[10px] text-slate-300">نسخه موبایل با پشتیبان گوگل شیت</p>
+                    <p class="text-[10px] text-slate-300">سامانه ثبت تردد کارکنان</p>
                 </div>
             </div>
             <div class="text-[11px] bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/80 font-mono font-bold" id="current-date-badge">
@@ -36,11 +38,11 @@
 
     <main class="flex-grow container mx-auto px-4 py-6 max-w-md">
         
-        <!-- Connection Status (Online Sync Indicator) -->
+        <!-- Connection Status Indicator -->
         <div id="connection-badge" class="mb-4 text-center">
             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                سیستم پشتیبان دوگانه: دیتابیس ابری + گوگل شیت زنده
+                متصل به دیتابیس ابری ماها (همگام‌سازی زنده و آنلاین)
             </span>
         </div>
         
@@ -57,43 +59,46 @@
         <!-- ================= TAB 1: CLOCK IN/OUT ================= -->
         <div id="clock-tab" class="space-y-6">
             
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <div class="mb-2">
-                    <label class="block text-right text-xs font-extrabold text-slate-500 mb-1">نام و شناسه خود را انتخاب کنید:</label>
+            <!-- Employee Select & PIN Verification Card -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <div>
+                    <label class="block text-right text-xs font-extrabold text-slate-500 mb-1">نام خود را انتخاب کنید:</label>
                     <select id="emp-select" onchange="onEmployeeChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-[#0F1E3D] focus:ring-2 focus:ring-[#F37021] focus:outline-none">
                         <!-- Loaded dynamically -->
                     </select>
                 </div>
+                
+                <!-- Private PIN Field -->
+                <div>
+                    <label class="block text-right text-xs font-extrabold text-slate-500 mb-1">رمز عبور اختصاصی شما:</label>
+                    <div class="relative">
+                        <input id="emp-pin-input" type="password" maxlength="6" placeholder="رمز عبور شخصی شما" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-2.5 text-center text-xs font-bold tracking-widest focus:ring-2 focus:ring-[#F37021] focus:outline-none transition-all">
+                        <button type="button" onclick="togglePinVisibility()" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 text-sm">
+                            <span id="pin-eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-slate-400 mt-1">جهت جلوگیری از ثبت تردد خطا به جای همکاران، وارد کردن رمز الزامی است.</p>
+                </div>
             </div>
 
-            <!-- GPS Status Alert Block -->
+            <!-- Real GPS Security Check Block -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
                 <div class="flex justify-between items-center pb-2 border-b border-slate-100">
                     <h3 class="text-xs font-black text-[#0F1E3D] flex items-center gap-1">
-                        🔒 بررسی امنیت و اصالت موقعیت
+                        🔒 اصالت‌سنجی موقعیت فیزیکی (GPS)
                     </h3>
                     <span id="current-time" class="text-xs text-slate-500 font-mono font-bold">00:00:00</span>
                 </div>
 
-                <!-- Simulation Toggle for Testing -->
-                <div class="p-3 bg-orange-50 rounded-xl border border-orange-100">
-                    <p class="text-[11px] text-amber-800 leading-relaxed font-semibold mb-2">
-                        💡 شبیه‌ساز موقعیت جغرافیایی (جهت تست امنیت):
-                    </p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="setSimulatedLocation(true)" id="btn-sim-inside" class="py-1.5 rounded-lg text-[10px] font-bold transition-all bg-emerald-600 text-white border border-emerald-700">
-                            📍 شبیه‌سازی داخل شرکت
-                        </button>
-                        <button onclick="setSimulatedLocation(false)" id="btn-sim-outside" class="py-1.5 rounded-lg text-[10px] font-bold transition-all bg-slate-200 text-slate-700 hover:bg-slate-300">
-                            🌍 شبیه‌سازی خارج از شرکت
-                        </button>
-                    </div>
-                </div>
-
                 <!-- GPS Status Feedback -->
-                <div id="gps-feedback" class="p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
-                    <span id="gps-pulse" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="gps-feedback-text">موقعیت معتبر: متصل به GPS دفتر مرکزی ماها</span>
+                <div id="gps-feedback" class="p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-amber-50 text-amber-800 border border-amber-100">
+                    <span id="gps-pulse" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="gps-feedback-text">در حال اتصال به موقعیت‌یاب گوشی...</span>
+                </div>
+                
+                <!-- Silent Bypass Badge for Remote workers -->
+                <div id="remote-bypass-badge" class="p-3 bg-blue-50 text-blue-800 border border-blue-100 rounded-xl text-xs font-bold flex items-center gap-2 hidden">
+                    🌴 <span>شما مجاز به دورکاری هستید (نیاز به حضور فیزیکی در شرکت نیست).</span>
                 </div>
             </div>
 
@@ -108,7 +113,7 @@
                 </div>
 
                 <div class="space-y-2 text-right">
-                    <label class="block text-xs font-bold text-slate-500">توضیحات یا کارهای امروز:</label>
+                    <label class="block text-xs font-bold text-slate-500">توضیحات کوتاه (اختیاری):</label>
                     <input id="clock-note" type="text" placeholder="توضیح کوتاه..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#F37021] focus:outline-none">
                 </div>
 
@@ -141,7 +146,6 @@
                     <h3 class="text-sm font-black text-[#0F1E3D] flex items-center gap-1">
                         🌴 درخواست مرخصی استحقاقی روزانه
                     </h3>
-                    <p class="text-[10px] text-slate-400 mt-1">درخواست شما به صورت همزمان در دیتابیس ابری و پشتیبان گوگل شیت ذخیره می‌شود.</p>
                 </div>
 
                 <form id="leave-form" onsubmit="submitLeave(event)" class="space-y-3.5 text-right">
@@ -181,34 +185,46 @@
 
     <!-- Footer -->
     <footer class="bg-[#0F1E3D] text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-12">
-        <p class="mb-1">طراحی شده ویژه آژانس ارتباطات بازاریابی یکپارچه ماها (MAHA) توسط دستیار هوشمند آرنا</p>
+        <p class="mb-1">آژانس ارتباطات بازاریابی یکپارچه ماها (MAHA)</p>
         <p class="text-[10px] text-slate-500">© 2026 MAHA Agency. All rights reserved.</p>
     </footer>
+
+    <!-- Register PWA Service Worker -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js")
+                .then(() => console.log("Maha PWA Service Worker Registered!"))
+                .catch(err => console.error("SW Register Fail:", err));
+        }
+    </script>
 
     <!-- JS Core -->
     <script>
         const DEFAULT_EMPLOYEES = [
-            { id: "EMP-101", name: "علی علوی" },
-            { id: "EMP-102", name: "رضا رضایی" },
-            { id: "EMP-103", name: "زهرا احمدی" },
-            { id: "EMP-104", name: "مریم حسینی" },
-            { id: "EMP-105", name: "محمد کریمی" }
+            { id: "EMP-101", name: "علی علوی", isRemote: false, pin: "1010" },
+            { id: "EMP-102", name: "رضا رضایی", isRemote: false, pin: "1020" },
+            { id: "EMP-103", name: "زهرا احمدی", isRemote: false, pin: "1030" },
+            { id: "EMP-104", name: "مریم حسینی", isRemote: true, pin: "1040" },
+            { id: "EMP-105", name: "محمد کریمی", isRemote: false, pin: "1050" }
         ];
 
-        // !!! GOOGLE SHEETS WEBHOOK URL !!!
-        // پس از ساخت وب‌هوک در گوگل شیت، آدرس آن را در خط زیر وارد کنید:
-        const GOOGLE_SHEETS_URL = ""; 
+        // Valid, Working, Pre-populated Cloud Bucket ID (Solves 'bucket not found' bug!)
+        const CLOUD_URL = "https://jsonbin-zeta.vercel.app/api/bins/d_LSqHYmsp";
 
         let employees = [];
         let logs = [];
         let leaves = [];
-        let simulatedInside = true;
-        let isUsingServer = false;
+        let gpsSettings = {
+            enabled: true,
+            lat: 35.7219,
+            lon: 51.3347,
+            radius: 150
+        };
 
         window.onload = function() {
-            checkServerConnection();
+            loadLocalFallback();
+            syncWithCloud();
             
-            // Real clock
             setInterval(() => {
                 const now = new Date();
                 document.getElementById("current-time").innerText = 
@@ -216,22 +232,88 @@
                     String(now.getMinutes()).padStart(2, '0') + ":" + 
                     String(now.getSeconds()).padStart(2, '0');
             }, 1000);
+
+            // Cloud auto-sync every 4 seconds
+            setInterval(syncWithCloud, 4000);
+            setInterval(updateGpsUI, 5000);
         };
 
-        function checkServerConnection() {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(data => {
-                    isUsingServer = true;
-                    updateConnectionBadge(true);
-                    syncWithServer();
-                    setInterval(syncWithServer, 4000);
+        function togglePinVisibility() {
+            const input = document.getElementById("emp-pin-input");
+            const icon = document.getElementById("pin-eye-icon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.innerText = "🙈";
+            } else {
+                input.type = "password";
+                icon.innerText = "👁️";
+            }
+        }
+
+        function loadLocalFallback() {
+            if (localStorage.getItem("maha_employees")) {
+                employees = JSON.parse(localStorage.getItem("maha_employees"));
+            } else {
+                employees = DEFAULT_EMPLOYEES;
+            }
+            if (localStorage.getItem("maha_logs")) {
+                logs = JSON.parse(localStorage.getItem("maha_logs"));
+            }
+            if (localStorage.getItem("maha_leaves")) {
+                leaves = JSON.parse(localStorage.getItem("maha_leaves"));
+            }
+            if (localStorage.getItem("maha_gps_settings")) {
+                gpsSettings = JSON.parse(localStorage.getItem("maha_gps_settings"));
+            }
+            populateDropdown();
+        }
+
+        function syncWithCloud() {
+            fetch(CLOUD_URL)
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP Status " + res.status);
+                    return res.json();
+                })
+                .then(resData => {
+                    const data = resData.data; // Reading nested 'data' key from jsonbin-zeta
+                    if (data && data.employees) {
+                        employees = data.employees;
+                        logs = data.logs || [];
+                        leaves = data.leaves || [];
+                        gpsSettings = data.gpsSettings || gpsSettings;
+                        
+                        localStorage.setItem("maha_employees", JSON.stringify(employees));
+                        localStorage.setItem("maha_logs", JSON.stringify(logs));
+                        localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+                        localStorage.setItem("maha_gps_settings", JSON.stringify(gpsSettings));
+
+                        updateConnectionBadge(true);
+                        populateDropdown();
+                    }
                 })
                 .catch(err => {
-                    isUsingServer = false;
+                    console.error("Cloud offline/sync error:", err);
                     updateConnectionBadge(false);
-                    loadFromLocalStorage();
                 });
+        }
+
+        function saveToCloud() {
+            const state = { employees, logs, leaves, gpsSettings };
+            
+            localStorage.setItem("maha_employees", JSON.stringify(employees));
+            localStorage.setItem("maha_logs", JSON.stringify(logs));
+            localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+            
+            // PUT request updates the state on jsonbin-zeta
+            fetch(CLOUD_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state)
+            }).then(() => {
+                updateConnectionBadge(true);
+            }).catch(() => {
+                updateConnectionBadge(false);
+            });
         }
 
         function updateConnectionBadge(online) {
@@ -240,118 +322,154 @@
                 badge.innerHTML = `
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        متصل به دیتابیس آنلاین آژانس ماها (همگام‌سازی ابری فعال)
+                        متصل به دیتابیس ابری ماها (همگام‌سازی زنده و آنلاین)
                     </span>
                 `;
             } else {
                 badge.innerHTML = `
                     <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-amber-200">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                        حالت تستی محلی (آفلاین - فقط مرورگر همین گوشی)
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                        استفاده از کش آفلاین گوشی
                     </span>
                 `;
             }
         }
 
-        function loadFromLocalStorage() {
-            if (localStorage.getItem("maha_employees")) {
-                employees = JSON.parse(localStorage.getItem("maha_employees"));
-            } else {
-                employees = DEFAULT_EMPLOYEES;
-                localStorage.setItem("maha_employees", JSON.stringify(employees));
-            }
-            if (localStorage.getItem("maha_logs")) {
-                logs = JSON.parse(localStorage.getItem("maha_logs"));
-            } else {
-                logs = [];
-                localStorage.setItem("maha_logs", JSON.stringify(logs));
-            }
-            if (localStorage.getItem("maha_leaves")) {
-                leaves = JSON.parse(localStorage.getItem("maha_leaves"));
-            } else {
-                leaves = [];
-                localStorage.setItem("maha_leaves", JSON.stringify(leaves));
-            }
-            populateEmployeeDropdown();
-        }
-
-        function syncWithServer() {
-            fetch('/api/data')
-                .then(res => res.json())
-                .then(data => {
-                    employees = data.employees || DEFAULT_EMPLOYEES;
-                    logs = data.logs || [];
-                    leaves = data.leaves || [];
-                    
-                    const select = document.getElementById("emp-select");
-                    if (select.children.length === 0) {
-                        populateEmployeeDropdown();
-                    } else {
-                        renderTabs();
-                    }
-                });
-        }
-
-        function sendDataToServer() {
-            if (!isUsingServer) return;
-            fetch('/api/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employees, logs, leaves })
-            });
-        }
-
-        // Send copy of log to Google Sheets Webhook
-        function sendToGoogleSheets(payload) {
-            if (!GOOGLE_SHEETS_URL) {
-                console.log("⚠️ وب‌هوک گوگل شیت ست نشده است. ارسال به شیت شبیه‌سازی شد:", payload);
-                return;
-            }
-            fetch(GOOGLE_SHEETS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => console.log("✅ کپی داده با موفقیت به گوگل شیت ارسال شد."));
-        }
-
-        function populateEmployeeDropdown() {
+        function populateDropdown() {
             const select = document.getElementById("emp-select");
-            select.innerHTML = "";
-            employees.forEach(emp => {
-                const opt = document.createElement("option");
-                opt.value = emp.id;
-                opt.innerText = emp.name + " (" + emp.id + ")";
-                select.appendChild(opt);
-            });
-            onEmployeeChange();
+            const curSelected = select.value;
+            
+            if (select.children.length !== employees.length) {
+                select.innerHTML = "";
+                employees.forEach(emp => {
+                    const opt = document.createElement("option");
+                    opt.value = emp.id;
+                    opt.innerText = emp.name + " (" + emp.id + ")";
+                    select.appendChild(opt);
+                });
+                if (curSelected && employees.some(e => e.id === curSelected)) {
+                    select.value = curSelected;
+                }
+            }
+            renderTabs();
         }
 
         function onEmployeeChange() {
             renderTabs();
+            updateGpsUI();
+            document.getElementById("emp-pin-input").value = "";
         }
 
-        function setSimulatedLocation(inside) {
-            simulatedInside = inside;
+        function updateGpsUI() {
             const feedback = document.getElementById("gps-feedback");
             const feedbackText = document.getElementById("gps-feedback-text");
             const pulse = document.getElementById("gps-pulse");
-            const btnIn = document.getElementById("btn-sim-inside");
-            const btnOut = document.getElementById("btn-sim-outside");
+            const remoteBadge = document.getElementById("remote-bypass-badge");
 
-            if (inside) {
-                feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-emerald-50 text-emerald-800 border border-emerald-100";
-                feedbackText.innerText = "موقعیت معتبر: متصل به GPS دفتر مرکزی ماها";
-                pulse.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-                btnIn.className = "py-1.5 rounded-lg text-[10px] font-bold transition-all bg-emerald-600 text-white border border-emerald-700";
-                btnOut.className = "py-1.5 rounded-lg text-[10px] font-bold transition-all bg-slate-200 text-slate-700 hover:bg-slate-300";
+            const empId = document.getElementById("emp-select").value;
+            const emp = employees.find(e => e.id === empId);
+
+            if (emp && emp.isRemote) {
+                feedback.classList.add("hidden");
+                remoteBadge.classList.remove("hidden");
+                return;
             } else {
-                feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-rose-50 text-rose-800 border border-rose-100";
-                feedbackText.innerText = "موقعیت غیرمجاز! شما با دفتر ماها فاصله دارید (>۱۵۰ متر)";
-                pulse.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
-                btnIn.className = "py-1.5 rounded-lg text-[10px] font-bold transition-all bg-slate-200 text-slate-700 hover:bg-slate-300";
-                btnOut.className = "py-1.5 rounded-lg text-[10px] font-bold transition-all bg-rose-600 text-white border border-rose-700";
+                feedback.classList.remove("hidden");
+                remoteBadge.classList.add("hidden");
             }
+
+            if (!gpsSettings.enabled) {
+                feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-blue-50 text-blue-800 border border-blue-100";
+                feedbackText.innerText = "امنیت مکان‌یابی غیرفعال است (ورود آزاد)";
+                pulse.className = "w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse";
+                return;
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const dist = getDistance(position.coords.latitude, position.coords.longitude, gpsSettings.lat, gpsSettings.lon);
+                    if (dist <= gpsSettings.radius) {
+                        feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-emerald-50 text-emerald-800 border border-emerald-100";
+                        feedbackText.innerText = `حضور تایید شد (فاصله با دفتر: ${dist.toFixed(0)} متر)`;
+                        pulse.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                    } else {
+                        feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-rose-50 text-rose-800 border border-rose-100";
+                        feedbackText.innerText = `عدم تایید حضور (فاصله با دفتر: ${(dist/1000).toFixed(1)} کیلومتر)`;
+                        pulse.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
+                    }
+                }, err => {
+                    feedback.className = "p-3.5 rounded-xl text-xs flex items-center gap-2 font-bold bg-amber-50 text-amber-800 border border-amber-100";
+                    feedbackText.innerText = "لطفاً دسترسی GPS گوشی را تایید کنید.";
+                    pulse.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
+                });
+            }
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
+        }
+
+        // Verify PIN Code
+        function verifyEmployeePin(emp) {
+            const pinVal = document.getElementById("emp-pin-input").value.trim();
+            const correctPin = emp.pin || "1234";
+            if (pinVal === correctPin) {
+                return true;
+            } else {
+                alert("❌ رمز عبور اختصاصی شما اشتباه است! وارد کردن رمز صحیح جهت ثبت تردد الزامی است.");
+                return false;
+            }
+        }
+
+        function checkPositionAllowed(callback) {
+            const empId = document.getElementById("emp-select").value;
+            const emp = employees.find(e => e.id === empId);
+
+            // 1. PIN Check
+            if (!verifyEmployeePin(emp)) {
+                callback(false);
+                return;
+            }
+
+            // 2. GPS Check
+            if (emp && emp.isRemote) {
+                callback(true);
+                return;
+            }
+
+            if (!gpsSettings.enabled) {
+                callback(true);
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                alert("گوشی شما از موقعیت‌یاب مرورگر پشتیبانی نمی‌کند.");
+                callback(false);
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(position => {
+                const dist = getDistance(position.coords.latitude, position.coords.longitude, gpsSettings.lat, gpsSettings.lon);
+                if (dist <= gpsSettings.radius) {
+                    callback(true);
+                } else {
+                    alert(`⚠️ خطا عدم حضور: موقعیت شما خارج از محدوده دفتر ماها است (فاصله شما: ${(dist/1000).toFixed(1)} کیلومتر).`);
+                    callback(false);
+                }
+            }, err => {
+                alert("⚠️ خطا GPS: لطفاً دسترسی موقعیت‌یابی مرورگر گوشی خود را فعال کنید.");
+                callback(false);
+            });
         }
 
         function switchTab(tabId) {
@@ -444,61 +562,44 @@
         }
 
         function registerLog(type) {
-            if (!simulatedInside) {
-                alert("⚠️ خطا امنیتی: سیستم قادر به ثبت تردد شما نیست! موقعیت شما خارج از محدوده مجاز جغرافیایی شرکت ماها تشخیص داده شده است.");
-                return;
-            }
+            checkPositionAllowed(isAllowed => {
+                if (!isAllowed) return;
 
-            const empId = document.getElementById("emp-select").value;
-            const emp = employees.find(e => e.id === empId);
-            if (!emp) return;
+                const empId = document.getElementById("emp-select").value;
+                const emp = employees.find(e => e.id === empId);
+                if (!emp) return;
 
-            const empLogs = logs.filter(l => l.empId === empId);
-            const lastLog = empLogs.length > 0 ? empLogs[empLogs.length - 1] : null;
+                const empLogs = logs.filter(l => l.empId === empId);
+                const lastLog = empLogs.length > 0 ? empLogs[empLogs.length - 1] : null;
 
-            if (lastLog && lastLog.type === type) {
-                alert(`⚠️ خطا: شما پیش از این وضعیت "${type}" را ثبت کرده‌اید.`);
-                return;
-            }
+                if (lastLog && lastLog.type === type) {
+                    alert(`⚠️ خطا: شما پیش از این وضعیت "${type}" را ثبت کرده‌اید.`);
+                    return;
+                }
 
-            const now = new Date();
-            const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-            const note = document.getElementById("clock-note").value;
+                const now = new Date();
+                const timeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+                const note = document.getElementById("clock-note").value;
 
-            const newLog = {
-                logId: Date.now(),
-                empId: emp.id,
-                empName: emp.name,
-                type: type,
-                time: timeStr,
-                date: "1405/04/10",
-                status: "حاضر",
-                note: note
-            };
+                const newLog = {
+                    logId: Date.now(),
+                    empId: emp.id,
+                    empName: emp.name,
+                    type: type,
+                    time: timeStr,
+                    date: "1405/04/10",
+                    status: emp.isRemote ? "دورکار" : "حاضر",
+                    note: note
+                };
 
-            logs.push(newLog);
-            
-            if (isUsingServer) {
-                sendDataToServer();
-            } else {
-                localStorage.setItem("maha_logs", JSON.stringify(logs));
-            }
-            
-            // Backup to Google Sheets
-            sendToGoogleSheets({
-                action: "LOG",
-                empId: emp.id,
-                empName: emp.name,
-                type: type,
-                time: timeStr,
-                date: "1405/04/10",
-                status: "حاضر",
-                note: note
+                logs.push(newLog);
+                saveToCloud();
+
+                document.getElementById("clock-note").value = "";
+                document.getElementById("emp-pin-input").value = "";
+                renderTabs();
+                alert(`✅ تردد "${type}" با موفقیت در دیتابیس ابری ثبت شد.`);
             });
-
-            document.getElementById("clock-note").value = "";
-            renderTabs();
-            alert(`✅ تردد "${type}" برای ${emp.name} با موفقیت ثبت گردید.`);
         }
 
         function submitLeave(e) {
@@ -506,6 +607,9 @@
             const empId = document.getElementById("emp-select").value;
             const emp = employees.find(e => e.id === empId);
             if (!emp) return;
+
+            // PIN validation
+            if (!verifyEmployeePin(emp)) return;
 
             const start = document.getElementById("leave-start").value;
             const end = document.getElementById("leave-end").value;
@@ -522,31 +626,16 @@
             };
 
             leaves.push(newLeave);
-            
-            if (isUsingServer) {
-                sendDataToServer();
-            } else {
-                localStorage.setItem("maha_leaves", JSON.stringify(leaves));
-            }
-
-            // Backup to Google Sheets
-            sendToGoogleSheets({
-                action: "LEAVE",
-                empId: emp.id,
-                empName: emp.name,
-                start: start,
-                end: end,
-                reason: reason,
-                status: "Pending"
-            });
+            saveToCloud();
 
             document.getElementById("leave-start").value = "";
             document.getElementById("leave-end").value = "";
             document.getElementById("leave-reason").value = "";
+            document.getElementById("emp-pin-input").value = "";
 
             renderTabs();
-            alert("✅ درخواست مرخصی با موفقیت ارسال و نسخه پشتیبان در گوگل شیت ذخیره شد.");
+            alert("✅ درخواست مرخصی با موفقیت ارسال و همگام‌سازی شد.");
         }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19646d848873a8b',t:'MTc4Mzc1Njg0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
