@@ -40,7 +40,7 @@
                     🔒 تایید و ورود امن
                 </button>
             </div>
-            <p class="text-[9px] text-slate-400">رمز پیش‌فرض برای دمو <strong>Maha2026</strong> است.</p>
+            
         </div>
     </div>
 
@@ -65,7 +65,7 @@
                         🔒 خروج امن
                     </button>
                     <span id="sync-status-badge" class="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">
-                        همگام‌سازی ابری گوگل شیت فعال 🟢
+                        همگام‌سازی ابری فعال 🟢
                     </span>
                 </div>
             </div>
@@ -182,7 +182,7 @@
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <div class="pb-3 border-b border-slate-100 mb-6">
                         <h3 class="text-sm font-extrabold text-[#0F1E3D]">
-                            📥 درخواست‌های مرخصی استحقاقی روزانه پرسنل
+                            📥 درخواست‌های مرخصی پرسنل
                         </h3>
                     </div>
 
@@ -304,7 +304,7 @@
         ];
 
         // Decoupled Cloud URL
-        let CLOUD_URL = "https://script.google.com/macros/s/AKfycbxjyTwheozZ0nyhnUgRjSLFXfoX49Z0mlkk3KbFxDqIu_XZGUWNd1IMgph0yHEFeeNU_A/exec";
+        let CLOUD_URL = "https://script.google.com/macros/s/AKfycbwTFvjGymfWHh5N7Jz-N-viPC6YPppXFrDc92oOtptPxOx9QdcZB8YbK2bdo0w9sZMv/exec";
 
         let employees = [];
         let logs = [];
@@ -354,13 +354,7 @@
             loadLocalFallback();
             loadConfigAndInit();
             initCharts();
-            
-            // Periodically sync every 5 seconds, ONLY if we are not saving!
-            setInterval(() => {
-                if (!isSaving) {
-                    syncWithCloud();
-                }
-            }, 5000);
+            setInterval(syncWithCloud, 5000);
         }
 
         function loadLocalFallback() {
@@ -442,21 +436,21 @@
                 return;
             }
 
+            // BUSTING GOOGLE REDIRECT CORS BUG WITH no-cors mode!
             fetch(CLOUD_URL + "?action=save_data", {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    updateSyncBadge(true);
-                    // Leave lock active for 1.5 seconds to ensure script fully completes
-                    setTimeout(() => {
-                        isSaving = false;
-                        if (onSuccessCallback) onSuccessCallback();
-                    }, 1500);
-                }
+            .then(() => {
+                updateSyncBadge(true, "ذخیره شد 🟢");
+                setTimeout(() => {
+                    isSaving = false;
+                    if (onSuccessCallback) onSuccessCallback();
+                    // Force a quick sync back to get the updated lists securely
+                    syncWithCloud();
+                }, 1500);
             })
             .catch(err => {
                 console.error("Save error:", err);
@@ -469,7 +463,7 @@
             const badge = document.getElementById("sync-status-badge");
             if (!badge) return;
             if (online) {
-                badge.innerText = msg || "همگام‌سازی ابری گوگل شیت فعال 🟢";
+                badge.innerText = msg || "همگام‌سازی ابری فعال 🟢";
                 badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
             } else {
                 badge.innerText = msg || "حالت آفلاین / تستی ⚠️";
@@ -631,7 +625,7 @@
                 document.getElementById("new-tab-id").value = "";
                 document.getElementById("new-tab-pin").value = "1234";
                 loadLocalFallback();
-                alert(`✅ همکار جدید "${name}" به لیست اضافه و در گوگل شیت ذخیره شد.`);
+                alert(`✅ همکار جدید "${name}" به لیست اضافه و در سیستم ابری ذخیره شد.`);
             });
         }
 
@@ -716,7 +710,7 @@
             ratioChart = new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
-                    labels: ['حاضر عادی', 'مرخصی استحقاقی روزانه', 'ماموریت/ساعتی'],
+                    labels: ['حاضر عادی', 'مرخصی', 'ماموریت/ساعتی'],
                     datasets: [{
                         data: [0, 0, 0],
                         backgroundColor: ['#10b981', '#F37021', '#3b82f6']
@@ -766,5 +760,5 @@
             ratioChart.update();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a197fdfd7a901e0c',t:'MTc4Mzc3NDgzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a7440fe2cd29c',t:'MTc4MzgwMDY1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

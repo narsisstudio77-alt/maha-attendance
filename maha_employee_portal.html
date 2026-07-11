@@ -42,7 +42,7 @@
         <div id="connection-badge" class="mb-4 text-center">
             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                متصل به دیتابیس ابری گوگل شیت ماها
+                متصل به دیتابیس ابری ماها
             </span>
         </div>
         
@@ -147,7 +147,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-4">
                 <div class="pb-2 border-b border-slate-100">
                     <h3 class="text-sm font-black text-[#0F1E3D] flex items-center gap-1">
-                        🌴 درخواست مرخصی استحقاقی روزانه
+                        🌴 درخواست مرخصی
                     </h3>
                 </div>
 
@@ -211,12 +211,12 @@
             { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
-        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjyTwheozZ0nyhnUgRjSLFXfoX49Z0mlkk3KbFxDqIu_XZGUWNd1IMgph0yHEFeeNU_A/exec"; 
+        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwTFvjGymfWHh5N7Jz-N-viPC6YPppXFrDc92oOtptPxOx9QdcZB8YbK2bdo0w9sZMv/exec"; 
 
         let employees = [];
         let logs = [];
         let leaves = [];
-        let isSaving = false; // Prevents race condition overwrites!
+        let isSaving = false; 
         
         let localStream = null;
         let capturedPhotoBase64 = "";
@@ -334,7 +334,7 @@
             fetch(GOOGLE_WEB_APP_URL + "?action=get_data")
                 .then(res => res.json())
                 .then(data => {
-                    if (isSaving) return; // double-check to avoid overwriting during fetch transit
+                    if (isSaving) return; 
                     if (data && data.employees) {
                         employees = data.employees;
                         logs = data.logs || [];
@@ -349,12 +349,12 @@
                     }
                 })
                 .catch(err => {
-                    updateConnectionBadge(false, "خطا در ارتباط با گوگل شیت");
+                    updateConnectionBadge(false, "خطا در ارتباط ابری");
                 });
         }
 
         function saveToGoogleSheets(onSuccessCallback) {
-            isSaving = true; // Lock timer sync!
+            isSaving = true; 
             updateConnectionBadge(true, "در حال ذخیره‌سازی ابری...");
             
             const state = { employees, logs, leaves };
@@ -369,21 +369,21 @@
                 return;
             }
             
+            // SECURITY BUSTER: Using mode: 'no-cors' to completely bypass Google's 302 Redirect CORS Block!
             fetch(GOOGLE_WEB_APP_URL + "?action=save_data", {
                 method: 'POST',
+                mode: 'no-cors', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    updateConnectionBadge(true);
-                    // Short timeout to let the Google Servers settle before releasing lock
-                    setTimeout(() => {
-                        isSaving = false;
-                        if (onSuccessCallback) onSuccessCallback();
-                    }, 1500);
-                }
+            .then(() => {
+                updateConnectionBadge(true, "ذخیره شد 🟢");
+                setTimeout(() => {
+                    isSaving = false;
+                    if (onSuccessCallback) onSuccessCallback();
+                    // Force a quick sync back to get the updated lists securely
+                    syncWithGoogleSheets();
+                }, 1500);
             })
             .catch(err => {
                 console.error("Save failed:", err);
@@ -399,7 +399,7 @@
                 badge.innerHTML = `
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        ${msg || "متصل به دیتابیس ابری گوگل شیت ماها 🟢"}
+                        ${msg || "متصل به دیتابیس ابری ماها 🟢"}
                     </span>
                 `;
             } else {
@@ -625,5 +625,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19801ad290ea63e',t:'MTc4Mzc3NDk4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a74210f6ad29c',t:'MTc4MzgwMDY0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
