@@ -40,9 +40,8 @@
         
         <!-- Connection Status Indicator -->
         <div id="connection-badge" class="mb-4 text-center">
-            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                متصل به دیتابیس ابری ماها (همگام‌سازی زنده و آنلاین)
+            <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-amber-200">
+                در حال بررسی اتصال به دیتابیس گوگل شیت ماها...
             </span>
         </div>
         
@@ -77,7 +76,6 @@
                             <span id="pin-eye-icon">👁️</span>
                         </button>
                     </div>
-                    <p class="text-[9px] text-slate-400 mt-1">جهت جلوگیری از ثبت تردد خطا به جای همکاران، وارد کردن رمز الزامی است.</p>
                 </div>
             </div>
 
@@ -208,7 +206,8 @@
             { id: "EMP-105", name: "محمد کریمی", isRemote: false, pin: "1050" }
         ];
 
-        const CLOUD_URL = "https://jsonbin-zeta.vercel.app/api/bins/d_LSqHYmsp";
+        // Decoupled Cloud URL (Now loaded dynamically from config.json!)
+        let GOOGLE_WEB_APP_URL = ""; 
 
         let employees = [];
         let logs = [];
@@ -222,7 +221,7 @@
 
         window.onload = function() {
             loadLocalFallback();
-            syncWithCloud();
+            loadConfigAndInit();
             
             setInterval(() => {
                 const now = new Date();
@@ -232,10 +231,32 @@
                     String(now.getSeconds()).padStart(2, '0');
             }, 1000);
 
-            // Cloud auto-sync every 4 seconds
-            setInterval(syncWithCloud, 4000);
+            // Cloud auto-sync every 5 seconds
+            setInterval(syncWithGoogleSheets, 5000);
             setInterval(updateGpsUI, 5000);
         };
+
+        // Load config.json to get Google Web App URL dynamically!
+        function loadConfigAndInit() {
+            fetch("config.json")
+                .then(res => {
+                    if (!res.ok) throw new Error("config.json not found");
+                    return res.json();
+                })
+                .then(config => {
+                    if (config && config.google_url) {
+                        GOOGLE_WEB_APP_URL = config.google_url;
+                        console.log("Loaded Google Sheets URL from config.json:", GOOGLE_WEB_APP_URL);
+                        syncWithGoogleSheets();
+                    } else {
+                        updateConnectionBadge(false, "پیکربندی نشده (استفاده از حافظه تستی گوشی)");
+                    }
+                })
+                .catch(err => {
+                    console.warn("Using local fallback (config.json is missing or not configured yet).");
+                    updateConnectionBadge(false, "حالت تستی مرورگر (config.json یافت نشد)");
+                });
+        }
 
         function togglePinVisibility() {
             const input = document.getElementById("emp-pin-input");
@@ -267,15 +288,12 @@
             populateDropdown();
         }
 
-        function syncWithCloud() {
-            fetch(CLOUD_URL)
-                .then(res => {
-                    if (!res.ok) throw new Error("HTTP Status " + res.status);
-                    return res.json();
-                })
-                .then(resData => {
-                    // FOOLPROOF SYNC FIX: Correctly check both nested and unnested data
-                    const data = resData.data ? resData.data : (resData.employees ? resData : null);
+        function syncWithGoogleSheets() {
+            if (!GOOGLE_WEB_APP_URL) return;
+            
+            fetch(GOOGLE_WEB_APP_URL + "?action=get_data")
+                .then(res => res.json())
+                .then(data => {
                     if (data && data.employees) {
                         employees = data.employees;
                         logs = data.logs || [];
@@ -292,44 +310,51 @@
                     }
                 })
                 .catch(err => {
-                    console.error("Cloud offline/sync error:", err);
-                    updateConnectionBadge(false);
+                    console.error("Google Sheets Sync Error:", err);
+                    updateConnectionBadge(false, "خطا در ارتباط با گوگل شیت");
                 });
         }
 
-        function saveToCloud() {
+        function saveToGoogleSheets() {
             const state = { employees, logs, leaves, gpsSettings };
             
             localStorage.setItem("maha_employees", JSON.stringify(employees));
             localStorage.setItem("maha_logs", JSON.stringify(logs));
             localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+
+            if (!GOOGLE_WEB_APP_URL) return;
             
-            // PUT request updates the state on jsonbin-zeta
-            fetch(CLOUD_URL, {
-                method: 'PUT',
+            fetch(GOOGLE_WEB_APP_URL + "?action=save_data", {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
-            }).then(() => {
-                updateConnectionBadge(true);
-            }).catch(() => {
-                updateConnectionBadge(false);
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    updateConnectionBadge(true);
+                }
+            })
+            .catch(err => {
+                console.error("Google Sheets Write Error:", err);
+                updateConnectionBadge(false, "خطا در بروزرسانی گوگل شیت");
             });
         }
 
-        function updateConnectionBadge(online) {
+        function updateConnectionBadge(online, msg) {
             const badge = document.getElementById("connection-badge");
             if (online) {
                 badge.innerHTML = `
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        متصل به دیتابیس ابری ماها (همگام‌سازی زنده و آنلاین)
+                        متصل به دیتابیس آنلاین گوگل شیت ماها (سایز کلود فعال)
                     </span>
                 `;
             } else {
                 badge.innerHTML = `
                     <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-amber-200">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                        استفاده از کش آفلاین گوشی
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-50"></span>
+                        ${msg || "آفلاین"}
                     </span>
                 `;
             }
@@ -592,7 +617,13 @@
                 };
 
                 logs.push(newLog);
-                saveToCloud();
+                
+                if (GOOGLE_WEB_APP_URL) {
+                    saveToGoogleSheets();
+                } else {
+                    localStorage.setItem("maha_logs", JSON.stringify(logs));
+                    updateConnectionBadge(false, "ذخیره در حافظه تستی گوشی");
+                }
 
                 document.getElementById("clock-note").value = "";
                 document.getElementById("emp-pin-input").value = "";
@@ -624,7 +655,13 @@
             };
 
             leaves.push(newLeave);
-            saveToCloud();
+            
+            if (GOOGLE_WEB_APP_URL) {
+                saveToGoogleSheets();
+            } else {
+                localStorage.setItem("maha_leaves", JSON.stringify(leaves));
+                updateConnectionBadge(false, "ذخیره در حافظه تستی گوشی");
+            }
 
             document.getElementById("leave-start").value = "";
             document.getElementById("leave-end").value = "";
@@ -635,5 +672,5 @@
             alert("✅ درخواست مرخصی با موفقیت ارسال شد.");
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a196719d5a7530c6',t:'MTc4Mzc1ODYwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a196eae1b895d35e',t:'MTc4Mzc2MzU2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -64,8 +64,8 @@
                     <button onclick="lockAdminPortal()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl font-bold transition-all">
                         🔒 خروج امن
                     </button>
-                    <span id="sync-status-badge" class="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">
-                        همگام‌سازی ابری زنده فعال
+                    <span id="sync-status-badge" class="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-xl font-bold">
+                        بررسی اتصال...
                     </span>
                 </div>
             </div>
@@ -279,7 +279,7 @@
                         </form>
                     </div>
 
-                    <!-- Right: Employees Table List (With Telecommuting Toggle & PIN Display) -->
+                    <!-- Right: Employees Table List -->
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 lg:col-span-2">
                         <div class="pb-3 border-b border-slate-100 mb-4 text-right">
                             <h3 class="text-sm font-extrabold text-[#0F1E3D]">
@@ -324,7 +324,8 @@
             { id: "EMP-105", name: "محمد کریمی", isRemote: false, pin: "1050" }
         ];
 
-        const CLOUD_URL = "https://jsonbin-zeta.vercel.app/api/bins/d_LSqHYmsp";
+        // Decoupled Cloud URL (loaded dynamically from config.json!)
+        let CLOUD_URL = ""; 
 
         let employees = [];
         let logs = [];
@@ -378,9 +379,30 @@
 
         function initApp() {
             loadLocalFallback();
-            syncWithCloud();
+            loadConfigAndInit();
             initCharts();
-            setInterval(syncWithCloud, 4000);
+            setInterval(syncWithCloud, 5000);
+        }
+
+        function loadConfigAndInit() {
+            fetch("config.json")
+                .then(res => {
+                    if (!res.ok) throw new Error("config.json not found");
+                    return res.json();
+                })
+                .then(config => {
+                    if (config && config.google_url) {
+                        CLOUD_URL = config.google_url;
+                        console.log("Loaded Google Sheets URL from config.json:", CLOUD_URL);
+                        syncWithCloud();
+                    } else {
+                        updateSyncBadge(false, "پیکربندی نشده (استفاده از حافظه تستی گوشی)");
+                    }
+                })
+                .catch(err => {
+                    console.warn("Using local fallback (config.json is missing or not configured yet).");
+                    updateSyncBadge(false, "حالت تستی مرورگر (config.json یافت نشد)");
+                });
         }
 
         function loadLocalFallback() {
@@ -403,7 +425,9 @@
         }
 
         function syncWithCloud() {
-            fetch(CLOUD_URL)
+            if (!CLOUD_URL) return;
+            
+            fetch(CLOUD_URL + "?action=get_data")
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.employees) {
@@ -423,7 +447,7 @@
                         populateGpsInputs();
                     }
                 })
-                .catch(() => updateSyncBadge(false));
+                .catch(() => updateSyncBadge(false, "خطا در ارتباط"));
         }
 
         function saveToCloud() {
@@ -434,21 +458,23 @@
             localStorage.setItem("maha_leaves", JSON.stringify(leaves));
             localStorage.setItem("maha_gps_settings", JSON.stringify(gpsSettings));
 
-            fetch(CLOUD_URL, {
-                method: 'PUT',
+            if (!CLOUD_URL) return;
+
+            fetch(CLOUD_URL + "?action=save_data", {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
             }).then(() => updateSyncBadge(true))
-              .catch(() => updateSyncBadge(false));
+              .catch(() => updateSyncBadge(false, "خطا در بروزرسانی"));
         }
 
-        function updateSyncBadge(online) {
+        function updateSyncBadge(online, msg) {
             const badge = document.getElementById("sync-status-badge");
             if (online) {
-                badge.innerText = "همگام‌سازی ابری زنده فعال";
+                badge.innerText = "همگام‌سازی ابری گوگل شیت فعال 🟢";
                 badge.className = "text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold";
             } else {
-                badge.innerText = "ارتباط قطع شد (کارهای شما بعد از اتصال همگام می‌شود)";
+                badge.innerText = msg || "حالت آفلاین / تستی ⚠️";
                 badge.className = "text-xs bg-amber-600 text-white px-3 py-1.5 rounded-xl font-bold";
             }
         }
@@ -517,7 +543,6 @@
             saveToCloud();
         }
 
-        // Live Pin edit directly from admin panel
         function changeEmployeePin(empId, newPin) {
             employees = employees.map(emp => {
                 if (emp.id === empId) {
@@ -630,7 +655,7 @@
                 `;
             });
 
-            // Employees Management Tab Table
+            // Employees Table
             const empBody = document.getElementById("employees-table-body");
             empBody.innerHTML = "";
             employees.forEach(emp => {
@@ -653,7 +678,7 @@
                         <td class="py-3 text-center text-slate-600 font-bold">${empLogsToday} بار</td>
                         <td class="py-3 text-center">
                             <button onclick="deleteEmployee('${emp.id}')" class="text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 font-bold py-1.5 px-3 rounded-xl text-[10px] transition-all">
-                                🗑️ حذف همکار
+                                🗑️ حذف
                             </button>
                         </td>
                     </tr>
@@ -805,5 +830,5 @@
             ratioChart.update();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1964c9ebd6adcc2',t:'MTc4Mzc1NzA4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a196eb2abc15d35e',t:'MTc4Mzc2MzU4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
