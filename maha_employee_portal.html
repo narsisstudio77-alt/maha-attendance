@@ -221,6 +221,20 @@
         let localStream = null;
         let capturedPhotoBase64 = "";
 
+        function togglePinVisibility() {
+            const input = document.getElementById("emp-pin-input");
+            const icon = document.getElementById("pin-eye-icon");
+            if (input && icon) {
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.innerText = "🙈";
+                } else {
+                    input.type = "password";
+                    icon.innerText = "👁️";
+                }
+            }
+        }
+
         window.onload = function() {
             loadLocalFallback();
             loadConfigAndInit();
@@ -440,7 +454,9 @@
         function verifyEmployeePin(emp) {
             const pinVal = document.getElementById("emp-pin-input").value.trim();
             const correctPin = emp.pin || "1234";
-            return pinVal === correctPin;
+            // TOSTRING FIX: Google Sheets converts numeric PINs (like 1010) to JavaScript numbers, 
+            // while the input value is a string. This converts both to string for a 100% reliable match!
+            return pinVal.toString().trim() === correctPin.toString().trim();
         }
 
         function switchTab(tabId) {
@@ -625,5 +641,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a74210f6ad29c',t:'MTc4MzgwMDY0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19a9079ec9edc7d',t:'MTc4MzgwMTgwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
