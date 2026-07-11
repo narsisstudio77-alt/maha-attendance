@@ -64,7 +64,7 @@
                         🔒 خروج امن
                     </button>
                     <span id="sync-status-badge" class="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold">
-                        همگام‌سازی ابری گوگل شیت فعال 🟢
+                        همگام‌سازی ابری فعال 🟢
                     </span>
                 </div>
             </div>
@@ -303,7 +303,7 @@
         ];
 
         // Decoupled Cloud URL
-        let CLOUD_URL = "https://script.google.com/macros/s/AKfycbz-8IC7TRj-4khhhxERJ0vt3Y2fmwiRaSpB5kl51xMrNlh8pctwpauS9XCviVeaAY_pfw/exec";
+        let CLOUD_URL = "https://script.google.com/macros/s/AKfycb11AnlPlegAWPK_E6Y5je1rMVf0iqW2uCRIkq8WHUoE1-83FFNWQIKeVaA6qI5ZkZ_0g/exec";
 
         let employees = [];
         let logs = [];
@@ -576,6 +576,42 @@
                 `;
             });
 
+            // Leaves Table Render (RE-INJECTED FIXED BLOCK!)
+            const leavesBody = document.getElementById("leaves-table-body");
+            leavesBody.innerHTML = "";
+            const pendingLeaves = leaves.filter(l => l.status === "Pending");
+            const pendingCountBadge = document.getElementById("pending-count-badge");
+            pendingCountBadge.innerText = pendingLeaves.length;
+            if (pendingLeaves.length > 0) {
+                pendingCountBadge.classList.remove("hidden");
+            } else {
+                pendingCountBadge.classList.add("hidden");
+            }
+
+            leaves.forEach(lv => {
+                let statusLabel = lv.status === "Pending" ? 
+                    `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-[10px] font-extrabold">⏱️ در انتظار بررسی</span>` :
+                    (lv.status === "Approved" ? `<span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-[10px] font-extrabold">✅ تایید شد</span>` :
+                    `<span class="bg-rose-100 text-rose-800 px-2 py-1 rounded-full text-[10px] font-extrabold">❌ رد شد</span>`);
+
+                let actionButtons = lv.status === "Pending" ? `
+                    <div class="flex justify-center gap-1">
+                        <button onclick="decideLeave(${lv.leaveId}, 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px]">تایید</button>
+                        <button onclick="decideLeave(${lv.leaveId}, 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2.5 rounded-lg text-[10px]">رد</button>
+                    </div>` : "-";
+
+                leavesBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 font-semibold text-[#0F1E3D]">${lv.empName} <span class="text-[10px] text-slate-400 block">${lv.empId}</span></td>
+                        <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.start}</td>
+                        <td class="py-3 text-center text-slate-600 font-bold font-mono">${lv.end}</td>
+                        <td class="py-3 text-slate-500 text-xs leading-relaxed max-w-[200px] truncate" title="${lv.reason}">${lv.reason}</td>
+                        <td class="py-3 text-center">${statusLabel}</td>
+                        <td class="py-3 text-center">${actionButtons}</td>
+                    </tr>
+                `;
+            });
+
             // Employees Management Tab Table
             const empBody = document.getElementById("employees-table-body");
             empBody.innerHTML = "";
@@ -759,5 +795,5 @@
             ratioChart.update();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19ae116ca4de5a3',t:'MTc4MzgwNTExMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19b07084877dc48',t:'MTc4MzgwNjY2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
