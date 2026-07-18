@@ -37,18 +37,18 @@
         </div>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 py-6 max-w-md">
+    <main class="flex-grow container mx-auto px-4 py-6 max-w-md space-y-6">
         
         <!-- Connection Status Indicator -->
-        <div id="connection-badge" class="mb-4 text-center">
+        <div id="connection-badge" class="text-center">
             <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1 border border-emerald-200">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                متصل به دیتابیس ابری گوگل شیت ماها
+                متصل به دیتابیس ابری ماها 🟢
             </span>
         </div>
         
         <!-- Tab Navigation -->
-        <div class="flex bg-slate-200/80 p-1 rounded-xl mb-6 shadow-inner">
+        <div class="flex bg-slate-200/80 p-1 rounded-xl shadow-inner">
             <button onclick="switchTab('clock-tab')" id="btn-clock-tab" class="flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 bg-[#F37021] text-white">
                 ⏱️ ثبت ورود و خروج
             </button>
@@ -148,7 +148,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 space-y-4">
                 <div class="pb-2 border-b border-slate-100">
                     <h3 class="text-sm font-black text-[#0F1E3D] flex items-center gap-1">
-                        🌴 درخواست مرخصی استحقاقی روزانه
+                        🌴 درخواست مرخصی روزانه
                     </h3>
                 </div>
 
@@ -212,7 +212,7 @@
             { id: "EMP-105", name: "محمد کریمی", pin: "1050" }
         ];
 
-        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwBpsa5JBHbPTZt0Y0y0BktaHmOsH_MAGj4bxTntqZC_9LzMuhkYGIX6G_aPQ2JOlivrQ/exec"; 
+        let GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycb11AnlPlegAWPK_E6Y5je1rMVf0iqW2uCRIkq8WHUoE1-83FFNWQIKeVaA6qI5ZkZ_0g/exec"; 
 
         let employees = [];
         let logs = [];
@@ -228,7 +228,6 @@
             startCamera();
             updateIranClock();
 
-            // Dynamic Live Iran Clock on Tehran Timezone
             setInterval(updateIranClock, 1000);
 
             // Fetch from Sheets every 6 seconds, ONLY if we are not actively saving!
@@ -239,20 +238,12 @@
             }, 6000);
         };
 
-        // Real-time Shamsi Date and Iran Clock Locker
         function getIranDateTime() {
             const dateOptions = {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                timeZone: 'Asia/Tehran'
+                year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tehran'
             };
             const timeOptions = {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Tehran'
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Tehran'
             };
 
             const persianDateFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', dateOptions);
@@ -261,7 +252,6 @@
             let dateStr = persianDateFormatter.format(new Date());
             let timeStr = timeFormatter.format(new Date());
 
-            // Convert Persian Numbers to Latin Digits for database uniformity
             const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
             const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
@@ -270,7 +260,6 @@
                 timeStr = timeStr.replace(persianDigits[i], englishDigits[i]);
             }
 
-            // Clean delimiters
             dateStr = dateStr.replace(/\//g, '/').replace(/-/g, '/');
 
             return { date: dateStr, time: timeStr };
@@ -278,12 +267,9 @@
 
         function updateIranClock() {
             const dt = getIranDateTime();
-            
-            // Update live clock
             const clock = document.getElementById("current-time");
             if (clock) clock.innerText = dt.time;
 
-            // Update live shamsi date header
             const dateBadge = document.getElementById("current-date-badge");
             if (dateBadge) dateBadge.innerText = dt.date;
         }
@@ -426,7 +412,6 @@
                 return;
             }
             
-            // SECURITY BUSTER
             fetch(GOOGLE_WEB_APP_URL + "?action=save_data", {
                 method: 'POST',
                 mode: 'no-cors', 
@@ -496,7 +481,6 @@
         function verifyEmployeePin(emp) {
             const pinVal = document.getElementById("emp-pin-input").value.trim();
             const correctPin = emp.pin || "1234";
-            // TOSTRING FIX
             return pinVal.toString().trim() === correctPin.toString().trim();
         }
 
@@ -546,46 +530,50 @@
             }
 
             const historyContainer = document.getElementById("personal-history");
-            historyContainer.innerHTML = "";
-            if (empLogs.length === 0) {
-                historyContainer.innerHTML = "<div class='text-center py-4 text-[11px] text-slate-400'>ترددی برای امروز ثبت نشده است.</div>";
-            } else {
-                [...empLogs].reverse().forEach(log => {
-                    const isEntry = log.type === "ورود";
-                    const badgeClass = isEntry ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800";
-                    historyContainer.innerHTML += `
-                        <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
-                            <span class="px-2 py-0.5 rounded font-bold ${badgeClass}">${log.type}</span>
-                            <span class="font-mono font-bold text-slate-600">${log.time}</span>
-                            <span class="text-slate-400 text-[10px]">${log.note || "-"}</span>
-                        </div>
-                    `;
-                });
+            if (historyContainer) {
+                historyContainer.innerHTML = "";
+                if (empLogs.length === 0) {
+                    historyContainer.innerHTML = "<div class='text-center py-4 text-[11px] text-slate-400'>ترددی برای امروز ثبت نشده است.</div>";
+                } else {
+                    [...empLogs].reverse().forEach(log => {
+                        const isEntry = log.type === "ورود";
+                        const badgeClass = isEntry ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800";
+                        historyContainer.innerHTML += `
+                            <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
+                                <span class="px-2 py-0.5 rounded font-bold ${badgeClass}">${log.type}</span>
+                                <span class="font-mono font-bold text-slate-600">${log.time}</span>
+                                <span class="text-slate-400 text-[10px]">${log.note || "-"}</span>
+                            </div>
+                        `;
+                    });
+                }
             }
 
             const leaveContainer = document.getElementById("personal-leaves-list");
-            leaveContainer.innerHTML = "";
-            const empLeaves = leaves.filter(l => l.empId === empId);
-            if (empLeaves.length === 0) {
-                leaveContainer.innerHTML = "<div class='text-center py-4 text-[11px] text-slate-400'>هیچ درخواستی ثبت نکرده‌اید.</div>";
-            } else {
-                [...empLeaves].reverse().forEach(lv => {
-                    let stBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">⏱️ در انتظار تایید</span>`;
-                    if (lv.status === "Approved") {
-                        stBadge = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">✅ تایید شد</span>`;
-                    } else if (lv.status === "Rejected") {
-                        stBadge = `<span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-[10px] font-bold">❌ رد شد</span>`;
-                    }
-                    leaveContainer.innerHTML += `
-                        <div class="bg-slate-50 p-3 rounded-xl text-xs space-y-1.5 border border-slate-100 text-right">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-[#0F1E3D]">از ${lv.start} تا ${lv.end}</span>
-                                ${stBadge}
+            if (leaveContainer) {
+                leaveContainer.innerHTML = "";
+                const empLeaves = leaves.filter(l => l.empId === empId);
+                if (empLeaves.length === 0) {
+                    leaveContainer.innerHTML = "<div class='text-center py-4 text-[11px] text-slate-400'>هیچ درخواستی ثبت نکرده‌اید.</div>";
+                } else {
+                    [...empLeaves].reverse().forEach(lv => {
+                        let stBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">⏱️ در انتظار تایید</span>`;
+                        if (lv.status === "Approved") {
+                            stBadge = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">✅ تایید شد</span>`;
+                        } else if (lv.status === "Rejected") {
+                            stBadge = `<span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-[10px] font-bold">❌ رد شد</span>`;
+                        }
+                        leaveContainer.innerHTML += `
+                            <div class="bg-slate-50 p-3 rounded-xl text-xs space-y-1.5 border border-slate-100 text-right">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold text-[#0F1E3D]">از ${lv.start} تا ${lv.end}</span>
+                                    ${stBadge}
+                                </div>
+                                <p class="text-slate-500 text-[10px] leading-relaxed">علت: ${lv.reason}</p>
                             </div>
-                            <p class="text-slate-500 text-[10px] leading-relaxed">علت: ${lv.reason}</p>
-                        </div>
-                    `;
-                });
+                        `;
+                    });
+                }
             }
         }
 
@@ -620,8 +608,8 @@
                 empId: emp.id,
                 empName: emp.name,
                 type: type,
-                time: dt.time, // Locked to Tehran Time!
-                date: dt.date, // Locked to dynamic Shamsi date!
+                time: dt.time, 
+                date: dt.date, 
                 status: "حاضر",
                 note: document.getElementById("clock-note").value || "",
                 selfie: capturedPhotoBase64
@@ -634,7 +622,7 @@
                 document.getElementById("btn-submit-out").disabled = false;
                 document.getElementById("clock-note").value = "";
                 document.getElementById("emp-pin-input").value = "";
-                startCamera(); // reset
+                startCamera(); 
                 renderTabs();
                 alert(`✅ تردد "${type}" با تصویر سلفی با موفقیت ثبت شد.`);
             });
@@ -680,5 +668,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a19b12042fe3d355',t:'MTc4MzgwNzExNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1cf8d833bd4927a',t:'MTc4NDM1NzQzMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
